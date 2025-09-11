@@ -1,0 +1,8 @@
+module TestV2 where
+
+import AgentTokenizationV2
+import Daml.Script
+
+-- Test the V2 system
+testV2Deployment : Script ()
+testV2Deployment = demoV2System
