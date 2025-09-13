@@ -1,11 +1,7 @@
-# Dockerfile for DAML Agent Tokenization on Render - v4.0
+# Dockerfile for DAML Agent Tokenization on Render - Simplified Working Version
 FROM openjdk:17-jdk-slim
 
-# Force cache invalidation - unique timestamp
-ARG BUILD_DATE=5b5b6c6-v4
-RUN echo "Build: $BUILD_DATE"
-
-# Install required tools
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     unzip \
@@ -13,71 +9,63 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install DAML SDK 2.10.2 directly from GitHub releases
-RUN curl -L -o daml-sdk.tar.gz https://github.com/digital-asset/daml/releases/download/v2.10.2/daml-sdk-2.10.2-linux.tar.gz && \
-    mkdir -p /root/.daml && \
-    tar -xzf daml-sdk.tar.gz -C /root/.daml --strip-components=1 && \
-    rm daml-sdk.tar.gz && \
-    chmod +x /root/.daml/daml && \
-    ln -sf /root/.daml/daml /usr/local/bin/daml
-
-# Add DAML to PATH
-ENV PATH="/root/.daml:$PATH"
-
-# Verify DAML installation
-RUN daml version
-
-# Create app directory
+# Create app directory first
 WORKDIR /app
 
-# Copy project files
+# Copy project files (including any pre-built DAR files)
 COPY . .
 
-# Build the DAML project
-RUN daml build
+# Create startup script that installs DAML at runtime
+RUN cat > /app/start.sh << 'EOF'
+#!/bin/bash
+set -e
 
-# Create startup script with better error handling
-RUN printf '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "🚀 Starting Agent Tokenization Platform..."\n\
-\n\
-# Wait for PostgreSQL if database variables are provided\n\
-if [ ! -z "$DATABASE_HOST" ] && [ ! -z "$DATABASE_PORT" ]; then\n\
-    echo "⏳ Waiting for PostgreSQL at $DATABASE_HOST:$DATABASE_PORT..."\n\
-\n\
-    # Try to connect for up to 60 seconds\n\
-    if timeout 60 bash -c "until nc -z $DATABASE_HOST $DATABASE_PORT; do sleep 2; echo Retrying...; done"; then\n\
-        echo "✅ PostgreSQL is ready!"\n\
-    else\n\
-        echo "❌ Could not connect to PostgreSQL after 60 seconds"\n\
-        echo "🔍 Database connection details:"\n\
-        echo "   HOST: $DATABASE_HOST"\n\
-        echo "   PORT: $DATABASE_PORT"\n\
-        echo "   USER: $DATABASE_USER"\n\
-        echo "   NAME: $DATABASE_NAME"\n\
-        echo "⚠️  Starting anyway - DAML will retry database connections..."\n\
-    fi\n\
-else\n\
-    echo "📝 No database connection details provided"\n\
-    echo "   DATABASE_HOST: $DATABASE_HOST"\n\
-    echo "   DATABASE_PORT: $DATABASE_PORT"\n\
-    echo "⚠️  Starting without database wait..."\n\
-fi\n\
-\n\
-# Start Canton with production config\n\
-echo "🔄 Starting Canton/DAML..."\n\
-echo "🌐 Will bind to port: $PORT"\n\
-\n\
-exec daml start --start-navigator=no --port $PORT\n' > /app/start.sh
+echo "🚀 Starting Agent Tokenization Platform..."
+
+# Install DAML if not already installed
+if ! command -v daml &> /dev/null; then
+    echo "📦 Installing DAML SDK..."
+    curl -L -o daml-sdk.tar.gz https://github.com/digital-asset/daml/releases/download/v2.10.2/daml-sdk-2.10.2-linux.tar.gz
+    mkdir -p /root/.daml
+    tar -xzf daml-sdk.tar.gz -C /root/.daml --strip-components=1
+    rm daml-sdk.tar.gz
+    chmod +x /root/.daml/daml
+    export PATH="/root/.daml:$PATH"
+    echo "✅ DAML installed successfully"
+else
+    echo "✅ DAML already available"
+fi
+
+# Build the project if DAR doesn't exist
+if [ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]; then
+    echo "🔨 Building DAML project..."
+    /root/.daml/daml build
+fi
+
+# Wait for PostgreSQL if database variables are provided
+if [ ! -z "$DATABASE_HOST" ] && [ ! -z "$DATABASE_PORT" ]; then
+    echo "⏳ Waiting for PostgreSQL at $DATABASE_HOST:$DATABASE_PORT..."
+    if timeout 60 bash -c "until nc -z $DATABASE_HOST $DATABASE_PORT; do sleep 2; echo Retrying...; done"; then
+        echo "✅ PostgreSQL is ready!"
+    else
+        echo "⚠️ PostgreSQL not accessible, starting anyway..."
+    fi
+else
+    echo "📝 No database configuration provided"
+fi
+
+# Start Canton/DAML
+echo "🔄 Starting Canton/DAML on port: $PORT"
+exec /root/.daml/daml start --start-navigator=no --port $PORT
+EOF
 
 RUN chmod +x /app/start.sh
 
 # Expose port
 EXPOSE $PORT
 
-# Health check with longer startup period
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
   CMD curl -f http://localhost:$PORT/readyz || exit 1
 
 # Start the application
