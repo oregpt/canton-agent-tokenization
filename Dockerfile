@@ -9,9 +9,8 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install DAML SDK
-ENV DAML_VERSION=2.10.2
-RUN curl -sSL https://get.daml.com/ | sh -s $DAML_VERSION
+# Install DAML SDK - use direct version approach
+RUN curl -sSL https://get.daml.com/ | sh -s 2.10.2
 ENV PATH="/root/.daml/bin:${PATH}"
 
 # Create app directory
