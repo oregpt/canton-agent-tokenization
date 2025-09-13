@@ -38,7 +38,7 @@ fi\n\
 # Build the project if DAR does not exist\n\
 if [ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]; then\n\
     echo "🔨 Building DAML project..."\n\
-    /root/.daml/daml build\n\
+    /root/.daml/bin/daml build\n\
 fi\n\
 \n\
 # Wait for PostgreSQL if database variables are provided\n\
@@ -55,7 +55,7 @@ fi\n\
 \n\
 # Start Canton/DAML\n\
 echo "🔄 Starting Canton/DAML on port: $PORT"\n\
-exec /root/.daml/daml start --start-navigator=no --port $PORT\n' > /app/start.sh
+exec /root/.daml/bin/daml start --start-navigator=no --port $PORT\n' > /app/start.sh
 
 RUN chmod +x /app/start.sh
 
