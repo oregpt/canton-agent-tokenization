@@ -7,7 +7,10 @@ RUN apt-get update && apt-get install -y \
     unzip \
     netcat-traditional \
     postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/*
+
+# Default port for local; Render will overwrite PORT env at runtime
+ENV PORT=8080
 
 # Create app directory first
 WORKDIR /app
@@ -50,10 +53,10 @@ else
 fi
 
 # --- Build DAR if missing ---
+# If you have an exact DAR name, keep the first check; otherwise fall back to any dar.
 if [[ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]]; then
   echo "🔨 Building DAML project..."
-  DAML_BIN=$(command -v daml || true)
-  if [[ -n "${DAML_BIN:-}" ]]; then
+  if command -v daml >/dev/null 2>&1; then
     daml build
   else
     echo "❌ Cannot find daml binary for build"
@@ -64,7 +67,7 @@ fi
 # --- Optional DB wait ---
 if [[ -n "${DATABASE_HOST:-}" && -n "${DATABASE_PORT:-}" ]]; then
   echo "⏳ Waiting for PostgreSQL at $DATABASE_HOST:$DATABASE_PORT..."
-  if timeout 60 bash -c "until nc -z \$DATABASE_HOST \$DATABASE_PORT; do sleep 2; echo Retrying...; done"; then
+  if timeout 60 bash -c "until nc -z $DATABASE_HOST $DATABASE_PORT; do sleep 2; echo Retrying...; done"; then
     echo "✅ PostgreSQL is ready!"
   else
     echo "⚠️ PostgreSQL not accessible, starting anyway..."
