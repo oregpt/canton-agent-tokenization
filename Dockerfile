@@ -15,50 +15,77 @@ WORKDIR /app
 # Copy project files (including any pre-built DAR files)
 COPY . .
 
-# Create startup script using printf (avoids heredoc issues)
-RUN printf '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "🚀 Starting Agent Tokenization Platform..."\n\
-\n\
-# Install DAML if not already installed\n\
-if ! command -v daml >/dev/null 2>&1; then\n\
-    echo "📦 Installing DAML SDK..."\n\
-    curl -L -o daml-sdk.tar.gz https://github.com/digital-asset/daml/releases/download/v2.10.2/daml-sdk-2.10.2-linux.tar.gz\n\
-    mkdir -p /root/.daml\n\
-    tar -xzf daml-sdk.tar.gz -C /root/.daml --strip-components=1\n\
-    rm daml-sdk.tar.gz\n\
-    # DAML executable is at /root/.daml/daml/daml based on structure\n\
-    chmod +x /root/.daml/daml/daml\n\
-    export PATH="/root/.daml/daml:\$PATH"\n\
-    echo "✅ DAML installed successfully"\n\
-else\n\
-    echo "✅ DAML already available"\n\
-fi\n\
-\n\
-# Build the project if DAR does not exist\n\
-if [ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]; then\n\
-    echo "🔨 Building DAML project..."\n\
-    export PATH="/root/.daml/daml:\$PATH"\n\
-    daml build\n\
-fi\n\
-\n\
-# Wait for PostgreSQL if database variables are provided\n\
-if [ ! -z "$DATABASE_HOST" ] && [ ! -z "$DATABASE_PORT" ]; then\n\
-    echo "⏳ Waiting for PostgreSQL at $DATABASE_HOST:$DATABASE_PORT..."\n\
-    if timeout 60 bash -c "until nc -z $DATABASE_HOST $DATABASE_PORT; do sleep 2; echo Retrying...; done"; then\n\
-        echo "✅ PostgreSQL is ready!"\n\
-    else\n\
-        echo "⚠️ PostgreSQL not accessible, starting anyway..."\n\
-    fi\n\
-else\n\
-    echo "📝 No database configuration provided"\n\
-fi\n\
-\n\
-# Start Canton/DAML\n\
-echo "🔄 Starting Canton/DAML on port: $PORT"\n\
-export PATH="/root/.daml/daml:\$PATH"\n\
-exec daml start --start-navigator=no --port $PORT\n' > /app/start.sh
+# Create startup script with proper port binding for Render
+RUN cat > /app/start.sh <<'EOF'
+#!/bin/bash
+set -euo pipefail
+
+echo "🚀 Starting Agent Tokenization Platform..."
+
+# --- Install DAML if missing ---
+if ! command -v daml >/dev/null 2>&1; then
+  echo "📦 Installing DAML SDK..."
+  curl -L -o /tmp/daml-sdk.tar.gz https://github.com/digital-asset/daml/releases/download/v2.10.2/daml-sdk-2.10.2-linux.tar.gz
+  mkdir -p /root/.daml
+  tar -xzf /tmp/daml-sdk.tar.gz -C /root/.daml --strip-components=1
+  rm -f /tmp/daml-sdk.tar.gz
+
+  echo "Debug: Contents of /root/.daml:"
+  ls -la /root/.daml/
+  echo "Debug: Looking for daml executable:"
+  find /root/.daml -name "daml" -type f || true
+
+  DAML_BIN=$(find /root/.daml -name "daml" -type f | head -n 1 )
+  if [[ -n "${DAML_BIN:-}" ]]; then
+    chmod +x "$DAML_BIN"
+    DAML_DIR=$(dirname "$DAML_BIN")
+    export PATH="$DAML_DIR:$PATH"
+    echo "✅ DAML installed at $DAML_BIN"
+  else
+    echo "❌ DAML binary not found!"
+    exit 1
+  fi
+else
+  echo "✅ DAML already available"
+fi
+
+# --- Build DAR if missing ---
+if [[ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]]; then
+  echo "🔨 Building DAML project..."
+  DAML_BIN=$(command -v daml || true)
+  if [[ -n "${DAML_BIN:-}" ]]; then
+    daml build
+  else
+    echo "❌ Cannot find daml binary for build"
+    exit 1
+  fi
+fi
+
+# --- Optional DB wait ---
+if [[ -n "${DATABASE_HOST:-}" && -n "${DATABASE_PORT:-}" ]]; then
+  echo "⏳ Waiting for PostgreSQL at $DATABASE_HOST:$DATABASE_PORT..."
+  if timeout 60 bash -c "until nc -z \$DATABASE_HOST \$DATABASE_PORT; do sleep 2; echo Retrying...; done"; then
+    echo "✅ PostgreSQL is ready!"
+  else
+    echo "⚠️ PostgreSQL not accessible, starting anyway..."
+  fi
+else
+  echo "📝 No database configuration provided"
+fi
+
+# --- Start ledger + JSON API (binds to $PORT for Render) ---
+HTTP_PORT="${PORT:-8080}"
+echo "🔄 Starting Sandbox (6865) + JSON API (HTTP $HTTP_PORT)"
+
+# Start sandbox in the background
+daml sandbox --port 6865 .daml/dist/*.dar &
+# Wait for sandbox
+timeout 60 bash -c 'until nc -z 127.0.0.1 6865; do sleep 2; done'
+echo "✅ Sandbox is up"
+
+# Start JSON API on $PORT (keeps container in foreground)
+exec daml json-api --ledger-host 127.0.0.1 --ledger-port 6865 --http-port "$HTTP_PORT"
+EOF
 
 RUN chmod +x /app/start.sh
 
