@@ -33,10 +33,10 @@ if ! command -v daml >/dev/null 2>&1; then\n\
     echo "Debug: Looking for daml executable:"\n\
     find /root/.daml -name "daml" -type f\n\
     # Find and make daml executable\n\
-    DAML_BIN=\$(find /root/.daml -name "daml" -type f | head -1)\n\
+    DAML_BIN=\$\(find /root/.daml -name "daml" -type f | head -1\)\n\
     if [ -n "\$DAML_BIN" ]; then\n\
         chmod +x "\$DAML_BIN"\n\
-        DAML_DIR=\$(dirname "\$DAML_BIN")\n\
+        DAML_DIR=\$\(dirname "\$DAML_BIN"\)\n\
         export PATH="\$DAML_DIR:\$PATH"\n\
         echo "✅ DAML installed at \$DAML_BIN"\n\
     else\n\
@@ -51,9 +51,9 @@ fi\n\
 if [ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]; then\n\
     echo "🔨 Building DAML project..."\n\
     # Find daml executable and add to PATH\n\
-    DAML_BIN=\$(find /root/.daml -name "daml" -type f | head -1)\n\
+    DAML_BIN=\$\(find /root/.daml -name "daml" -type f | head -1\)\n\
     if [ -n "\$DAML_BIN" ]; then\n\
-        DAML_DIR=\$(dirname "\$DAML_BIN")\n\
+        DAML_DIR=\$\(dirname "\$DAML_BIN"\)\n\
         export PATH="\$DAML_DIR:\$PATH"\n\
         daml build\n\
     else\n\
@@ -77,9 +77,9 @@ fi\n\
 # Start Canton/DAML\n\
 echo "🔄 Starting Canton/DAML on port: $PORT"\n\
 # Find daml executable and add to PATH\n\
-DAML_BIN=\$(find /root/.daml -name "daml" -type f | head -1)\n\
+DAML_BIN=\$\(find /root/.daml -name "daml" -type f | head -1\)\n\
 if [ -n "\$DAML_BIN" ]; then\n\
-    DAML_DIR=\$(dirname "\$DAML_BIN")\n\
+    DAML_DIR=\$\(dirname "\$DAML_BIN"\)\n\
     export PATH="\$DAML_DIR:\$PATH"\n\
     exec daml start --start-navigator=no --port $PORT\n\
 else\n\
