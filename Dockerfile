@@ -1,8 +1,8 @@
-# Dockerfile for DAML Agent Tokenization on Render - v3.0
+# Dockerfile for DAML Agent Tokenization on Render - v4.0
 FROM openjdk:17-jdk-slim
 
 # Force cache invalidation - unique timestamp
-ARG BUILD_DATE=62f1bdd-v3
+ARG BUILD_DATE=5b5b6c6-v4
 RUN echo "Build: $BUILD_DATE"
 
 # Install required tools
@@ -18,7 +18,11 @@ RUN curl -L -o daml-sdk.tar.gz https://github.com/digital-asset/daml/releases/do
     mkdir -p /root/.daml && \
     tar -xzf daml-sdk.tar.gz -C /root/.daml --strip-components=1 && \
     rm daml-sdk.tar.gz && \
-    ln -s /root/.daml/daml /usr/local/bin/daml
+    chmod +x /root/.daml/daml && \
+    ln -sf /root/.daml/daml /usr/local/bin/daml
+
+# Add DAML to PATH
+ENV PATH="/root/.daml:$PATH"
 
 # Verify DAML installation
 RUN daml version
