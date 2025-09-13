@@ -1,8 +1,8 @@
-# Dockerfile for DAML Agent Tokenization on Render - v2.0
+# Dockerfile for DAML Agent Tokenization on Render - v3.0
 FROM openjdk:17-jdk-slim
 
 # Force cache invalidation - unique timestamp
-ARG BUILD_DATE=294293c-fix
+ARG BUILD_DATE=62f1bdd-v3
 RUN echo "Build: $BUILD_DATE"
 
 # Install required tools
@@ -13,9 +13,12 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Install DAML SDK 2.10.2 directly (no variables)
-RUN curl -sSL https://get.daml.com/ | sh -s 2.10.2
-ENV PATH="/root/.daml/bin:${PATH}"
+# Install DAML SDK 2.10.2 directly from GitHub releases
+RUN curl -L -o daml-sdk.tar.gz https://github.com/digital-asset/daml/releases/download/v2.10.2/daml-sdk-2.10.2-linux.tar.gz && \
+    mkdir -p /root/.daml && \
+    tar -xzf daml-sdk.tar.gz -C /root/.daml --strip-components=1 && \
+    rm daml-sdk.tar.gz && \
+    ln -s /root/.daml/daml /usr/local/bin/daml
 
 # Verify DAML installation
 RUN daml version
