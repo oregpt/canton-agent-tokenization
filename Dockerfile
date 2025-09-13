@@ -28,8 +28,8 @@ if ! command -v daml >/dev/null 2>&1; then\n\
     mkdir -p /root/.daml\n\
     tar -xzf daml-sdk.tar.gz -C /root/.daml --strip-components=1\n\
     rm daml-sdk.tar.gz\n\
-    chmod +x /root/.daml/daml\n\
-    export PATH="/root/.daml:$PATH"\n\
+    chmod +x /root/.daml/bin/daml\n\
+    export PATH="/root/.daml/bin:$PATH"\n\
     echo "✅ DAML installed successfully"\n\
 else\n\
     echo "✅ DAML already available"\n\
@@ -38,7 +38,8 @@ fi\n\
 # Build the project if DAR does not exist\n\
 if [ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]; then\n\
     echo "🔨 Building DAML project..."\n\
-    /root/.daml/bin/daml build\n\
+    export PATH="/root/.daml/bin:$PATH"\n\
+    daml build\n\
 fi\n\
 \n\
 # Wait for PostgreSQL if database variables are provided\n\
@@ -55,7 +56,8 @@ fi\n\
 \n\
 # Start Canton/DAML\n\
 echo "🔄 Starting Canton/DAML on port: $PORT"\n\
-exec /root/.daml/bin/daml start --start-navigator=no --port $PORT\n' > /app/start.sh
+export PATH="/root/.daml/bin:$PATH"\n\
+exec daml start --start-navigator=no --port $PORT\n' > /app/start.sh
 
 RUN chmod +x /app/start.sh
 
