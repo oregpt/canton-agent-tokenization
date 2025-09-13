@@ -71,4 +71,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
   CMD curl -f http://localhost:$PORT/readyz || exit 1
 
 # Start the application
-CMD ["/app/start.sh"]
+CMD ["/app/start.sh"]# Force cache bust Sat, Sep 13, 2025  3:12:17 PM
