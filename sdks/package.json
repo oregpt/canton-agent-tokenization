@@ -1,0 +1,51 @@
+{
+  "name": "@agent-tokenization/sdk",
+  "version": "1.0.0",
+  "description": "JavaScript/TypeScript SDK for the Agent Tokenization platform",
+  "main": "agent-tokenization-js-sdk.js",
+  "types": "types/index.d.ts",
+  "scripts": {
+    "build": "npm run build:js && npm run build:types",
+    "build:js": "echo 'JavaScript SDK ready'",
+    "build:types": "tsc --declaration --emitDeclarationOnly --outDir types",
+    "test": "jest",
+    "lint": "eslint *.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "agent-tokenization",
+    "daml",
+    "blockchain",
+    "ai-agents",
+    "usage-tracking",
+    "smart-contracts"
+  ],
+  "author": "Agent Tokenization Platform",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/agent-tokenization-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/agent-tokenization-sdk/issues"
+  },
+  "homepage": "https://github.com/your-org/agent-tokenization-sdk#readme",
+  "dependencies": {
+    "cross-fetch": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "agent-tokenization-js-sdk.js",
+    "types/",
+    "README.md",
+    "LICENSE"
+  ]
+}

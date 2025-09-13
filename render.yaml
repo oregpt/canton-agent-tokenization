@@ -1,0 +1,66 @@
+# Render Blueprint for DAML Agent Tokenization Platform
+# Deploy this entire stack to Render with one click
+
+services:
+  # PostgreSQL Database Service
+  - type: pserv
+    name: agent-tokenization-db
+    databaseName: canton_agent_tokenization
+    databaseUser: canton_user
+    plan: starter # $7/month - upgrade to standard for production
+
+  # Canton Blockchain Service
+  - type: web
+    name: agent-tokenization-api
+    runtime: docker
+    repo: # Your GitHub repo URL here
+    branch: main
+    buildCommand: docker build -t agent-tokenization .
+    startCommand: /app/start.sh
+    plan: starter # $7/month - upgrade to standard for production
+
+    # Environment Variables
+    envVars:
+      - key: PORT
+        value: "7575"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agent-tokenization-db
+          property: connectionString
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: agent-tokenization-db
+          property: host
+      - key: DATABASE_PORT
+        value: "5432"
+      - key: DATABASE_NAME
+        value: "canton_agent_tokenization"
+      - key: DATABASE_USER
+        fromDatabase:
+          name: agent-tokenization-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: agent-tokenization-db
+          property: password
+      - key: ENVIRONMENT
+        value: "production"
+      - key: CORS_ORIGIN
+        value: "*" # Update with your web app domain
+
+    # Health check endpoint
+    healthCheckPath: /readyz
+
+    # Auto-deploy on Git push
+    autoDeploy: true
+
+# Optional: Static Site for Documentation (Free tier)
+  - type: web
+    name: agent-tokenization-docs
+    runtime: static
+    buildCommand: echo "Documentation site"
+    staticPublishPath: ./docs
+    routes:
+      - type: redirect
+        source: /
+        destination: /LOCAL_DEPLOYMENT_GUIDE.html
