@@ -28,21 +28,10 @@ if ! command -v daml >/dev/null 2>&1; then\n\
     mkdir -p /root/.daml\n\
     tar -xzf daml-sdk.tar.gz -C /root/.daml --strip-components=1\n\
     rm daml-sdk.tar.gz\n\
-    echo "Debug: Contents of /root/.daml:"\n\
-    ls -la /root/.daml/\n\
-    echo "Debug: Looking for daml executable:"\n\
-    find /root/.daml -name "daml" -type f\n\
-    # Find and make daml executable\n\
-    DAML_BIN=\$\(find /root/.daml -name "daml" -type f | head -1\)\n\
-    if [ -n "\$DAML_BIN" ]; then\n\
-        chmod +x "\$DAML_BIN"\n\
-        DAML_DIR=\$\(dirname "\$DAML_BIN"\)\n\
-        export PATH="\$DAML_DIR:\$PATH"\n\
-        echo "✅ DAML installed at \$DAML_BIN"\n\
-    else\n\
-        echo "❌ DAML binary not found!"\n\
-        exit 1\n\
-    fi\n\
+    # DAML executable is at /root/.daml/daml/daml based on structure\n\
+    chmod +x /root/.daml/daml/daml\n\
+    export PATH="/root/.daml/daml:\$PATH"\n\
+    echo "✅ DAML installed successfully"\n\
 else\n\
     echo "✅ DAML already available"\n\
 fi\n\
@@ -50,16 +39,8 @@ fi\n\
 # Build the project if DAR does not exist\n\
 if [ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]; then\n\
     echo "🔨 Building DAML project..."\n\
-    # Find daml executable and add to PATH\n\
-    DAML_BIN=\$\(find /root/.daml -name "daml" -type f | head -1\)\n\
-    if [ -n "\$DAML_BIN" ]; then\n\
-        DAML_DIR=\$\(dirname "\$DAML_BIN"\)\n\
-        export PATH="\$DAML_DIR:\$PATH"\n\
-        daml build\n\
-    else\n\
-        echo "❌ Cannot find daml binary for build"\n\
-        exit 1\n\
-    fi\n\
+    export PATH="/root/.daml/daml:\$PATH"\n\
+    daml build\n\
 fi\n\
 \n\
 # Wait for PostgreSQL if database variables are provided\n\
@@ -76,16 +57,8 @@ fi\n\
 \n\
 # Start Canton/DAML\n\
 echo "🔄 Starting Canton/DAML on port: $PORT"\n\
-# Find daml executable and add to PATH\n\
-DAML_BIN=\$\(find /root/.daml -name "daml" -type f | head -1\)\n\
-if [ -n "\$DAML_BIN" ]; then\n\
-    DAML_DIR=\$\(dirname "\$DAML_BIN"\)\n\
-    export PATH="\$DAML_DIR:\$PATH"\n\
-    exec daml start --start-navigator=no --port $PORT\n\
-else\n\
-    echo "❌ Cannot find daml binary to start"\n\
-    exit 1\n\
-fi\n' > /app/start.sh
+export PATH="/root/.daml/daml:\$PATH"\n\
+exec daml start --start-navigator=no --port $PORT\n' > /app/start.sh
 
 RUN chmod +x /app/start.sh
 
