@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y \
     unzip \
     netcat-traditional \
     postgresql-client \
-    timeout \
     && rm -rf /var/lib/apt/lists/*
 
 # Install DAML SDK
@@ -24,7 +23,7 @@ COPY . .
 # Build the DAML project
 RUN daml build
 
-# Create startup script with better error handling
+# Create startup script with better error handling (timeout command is built-in)
 RUN echo '#!/bin/bash' > /app/start.sh && \
     echo 'set -e' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
@@ -34,7 +33,7 @@ RUN echo '#!/bin/bash' > /app/start.sh && \
     echo 'if [ ! -z "$DATABASE_HOST" ] && [ ! -z "$DATABASE_PORT" ]; then' >> /app/start.sh && \
     echo '    echo "⏳ Waiting for PostgreSQL at $DATABASE_HOST:$DATABASE_PORT..."' >> /app/start.sh && \
     echo '' >> /app/start.sh && \
-    echo '    # Try to connect for up to 60 seconds' >> /app/start.sh && \
+    echo '    # Try to connect for up to 60 seconds (timeout is built-in to coreutils)' >> /app/start.sh && \
     echo '    if timeout 60 bash -c "until nc -z $DATABASE_HOST $DATABASE_PORT; do sleep 2; echo Retrying...; done"; then' >> /app/start.sh && \
     echo '        echo "✅ PostgreSQL is ready!"' >> /app/start.sh && \
     echo '    else' >> /app/start.sh && \
