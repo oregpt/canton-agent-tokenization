@@ -1,0 +1,15 @@
+# Simple Render deployment using pre-built image
+services:
+  - type: web
+    name: agent-tokenization-api
+    runtime: image
+    image:
+      url: docker.io/your-username/agent-tokenization:latest
+    plan: starter
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agent-tokenization-db
+          property: connectionString

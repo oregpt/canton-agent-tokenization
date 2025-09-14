@@ -38,7 +38,7 @@ if ! command -v daml >/dev/null 2>&1; then
   echo "Debug: Looking for daml executable:"
   find /root/.daml -name "daml" -type f || true
 
-  DAML_BIN=$(find /root/.daml -name "daml" -type f | head -n 1 )
+  DAML_BIN=$(find /root/.daml -name "daml" -type f | grep -v "/lib/" | head -n 1 )
   if [[ -n "${DAML_BIN:-}" ]]; then
     chmod +x "$DAML_BIN"
     DAML_DIR=$(dirname "$DAML_BIN")

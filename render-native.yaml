@@ -1,0 +1,19 @@
+# Native Render deployment (no Docker)
+services:
+  - type: pserv
+    name: agent-tokenization-db
+    databaseName: canton_agent_tokenization
+    databaseUser: canton_user
+    plan: starter
+
+  - type: web
+    name: agent-tokenization-api
+    runtime: java
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: chmod +x start.sh && ./start.sh
+    plan: starter
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: JAVA_OPTS
+        value: "-Xmx1g"
