@@ -5,15 +5,13 @@ services:
   # PostgreSQL Database Service
   - type: pserv
     name: agent-tokenization-db
-    databaseName: canton_agent_tokenization
-    databaseUser: canton_user
     plan: starter # $7/month - upgrade to standard for production
 
   # Canton Blockchain Service (Native Java)
   - type: web
     name: agent-tokenization-api
     runtime: java
-    repo: # Your GitHub repo URL here
+    # repo field not needed - automatically uses connected repo
     branch: main
     buildCommand: chmod +x build.sh && ./build.sh
     startCommand: chmod +x start.sh && ./start.sh
@@ -36,11 +34,9 @@ services:
       - key: DATABASE_PORT
         value: "5432"
       - key: DATABASE_NAME
-        value: "canton_agent_tokenization"
+        value: "postgres"
       - key: DATABASE_USER
-        fromDatabase:
-          name: agent-tokenization-db
-          property: user
+        value: "postgres"
       - key: DATABASE_PASSWORD
         fromDatabase:
           name: agent-tokenization-db
@@ -50,19 +46,5 @@ services:
       - key: CORS_ORIGIN
         value: "*" # Update with your web app domain
 
-    # Health check endpoint
-    healthCheckPath: /readyz
-
     # Auto-deploy on Git push
     autoDeploy: true
-
-# Optional: Static Site for Documentation (Free tier)
-  - type: web
-    name: agent-tokenization-docs
-    runtime: static
-    buildCommand: echo "Documentation site"
-    staticPublishPath: ./docs
-    routes:
-      - type: redirect
-        source: /
-        destination: /LOCAL_DEPLOYMENT_GUIDE.html
