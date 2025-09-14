@@ -1,6 +1,5 @@
 # Force cache invalidation - trigger fresh build
 .git
-.daml/dist
 node_modules
 *.log
 *.tmp
