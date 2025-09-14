@@ -5,17 +5,15 @@ services:
   # PostgreSQL Database Service
   - type: pserv
     name: agent-tokenization-db
-    plan: starter # $7/month - upgrade to standard for production
+    plan: starter
 
-  # Canton Blockchain Service (Native Java)
+  # Canton Blockchain Service (Native)
   - type: web
     name: agent-tokenization-api
-    runtime: java
-    # repo field not needed - automatically uses connected repo
-    branch: main
+    runtime: node
     buildCommand: chmod +x build.sh && ./build.sh
     startCommand: chmod +x start.sh && ./start.sh
-    plan: starter # $7/month - upgrade to standard for production
+    plan: starter
 
     # Environment Variables
     envVars:
