@@ -25,52 +25,30 @@ set -euo pipefail
 
 echo "🚀 Starting Agent Tokenization Platform..."
 
-# --- Install DAML if missing ---
-if ! command -v daml >/dev/null 2>&1; then
-  echo "📦 Installing DAML SDK..."
-  curl -L -o /tmp/daml-sdk.tar.gz https://github.com/digital-asset/daml/releases/download/v2.10.2/daml-sdk-2.10.2-linux.tar.gz
-  mkdir -p /root/.daml
-  tar -xzf /tmp/daml-sdk.tar.gz -C /root/.daml --strip-components=1
-  rm -f /tmp/daml-sdk.tar.gz
+# --- Install DAML SDK (minimal, just for runtime) ---
+echo "📦 Installing DAML SDK..."
+curl -L -o /tmp/daml-sdk.tar.gz https://github.com/digital-asset/daml/releases/download/v2.10.2/daml-sdk-2.10.2-linux.tar.gz
+mkdir -p /root/.daml
+tar -xzf /tmp/daml-sdk.tar.gz -C /root/.daml --strip-components=1
+rm -f /tmp/daml-sdk.tar.gz
 
-  echo "Debug: Contents of /root/.daml:"
-  ls -la /root/.daml/
-  echo "Debug: Looking for daml executable:"
-  find /root/.daml -name "daml" -type f || true
+# Find and set up DAML executable
+DAML_BIN=$(find /root/.daml -name "daml" -type f | grep -v "/lib/" | head -n 1 )
+chmod +x "$DAML_BIN"
+DAML_DIR=$(dirname "$DAML_BIN")
+export PATH="$DAML_DIR:$PATH"
+echo "✅ DAML SDK installed"
 
-  DAML_BIN=$(find /root/.daml -name "daml" -type f | grep -v "/lib/" | head -n 1 )
-  if [[ -n "${DAML_BIN:-}" ]]; then
-    chmod +x "$DAML_BIN"
-    DAML_DIR=$(dirname "$DAML_BIN")
-    export PATH="$DAML_DIR:$PATH"
-    echo "✅ DAML installed at $DAML_BIN"
-  else
-    echo "❌ DAML binary not found!"
-    exit 1
-  fi
+# --- Verify DAR file exists (should be copied via COPY . .) ---
+echo "📁 Verifying pre-built DAR file..."
+if [ -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]; then
+  echo "✅ Found pre-built DAR file"
+  ls -la .daml/dist/
 else
-  echo "✅ DAML already available"
-fi
-
-# --- Check for existing DAR files ---
-echo "📁 Checking for DAR files..."
-ls -la .daml/dist/ || echo "No .daml/dist directory found"
-
-# Skip build if any DAR exists (to avoid GitHub API issues)
-if ls .daml/dist/*.dar >/dev/null 2>&1; then
-  echo "✅ Found existing DAR files, skipping build"
-else
-  echo "🔨 Building DAML project..."
-  if command -v daml >/dev/null 2>&1; then
-    # Try offline build first
-    daml build --offline || {
-      echo "⚠️ Offline build failed, trying online..."
-      daml build
-    }
-  else
-    echo "❌ Cannot find daml binary for build"
-    exit 1
-  fi
+  echo "❌ Pre-built DAR file not found! Check if it was included in Docker build."
+  echo "Contents of .daml/:"
+  ls -la .daml/ || echo "No .daml directory"
+  exit 1
 fi
 
 # --- Optional DB wait ---
