@@ -9,20 +9,22 @@ services:
     databaseUser: canton_user
     plan: starter # $7/month - upgrade to standard for production
 
-  # Canton Blockchain Service
+  # Canton Blockchain Service (Native Java)
   - type: web
     name: agent-tokenization-api
-    runtime: docker
+    runtime: java
     repo: # Your GitHub repo URL here
     branch: main
-    buildCommand: docker build -t agent-tokenization .
-    startCommand: /app/start.sh
+    buildCommand: chmod +x build.sh && ./build.sh
+    startCommand: chmod +x start.sh && ./start.sh
     plan: starter # $7/month - upgrade to standard for production
 
     # Environment Variables
     envVars:
       - key: PORT
-        value: "7575"
+        value: "8080"
+      - key: JAVA_OPTS
+        value: "-Xmx1g"
       - key: DATABASE_URL
         fromDatabase:
           name: agent-tokenization-db
