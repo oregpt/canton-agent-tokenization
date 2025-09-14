@@ -1,0 +1,16 @@
+{
+  "name": "agent-tokenization-api",
+  "version": "3.0.0",
+  "description": "Agent Tokenization Platform API",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step required for serverless functions'"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": ["agent", "tokenization", "daml", "blockchain"],
+  "author": "Claude Code",
+  "license": "MIT"
+}
