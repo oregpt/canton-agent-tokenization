@@ -52,12 +52,21 @@ else
   echo "✅ DAML already available"
 fi
 
-# --- Build DAR if missing ---
-# If you have an exact DAR name, keep the first check; otherwise fall back to any dar.
-if [[ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]]; then
+# --- Check for existing DAR files ---
+echo "📁 Checking for DAR files..."
+ls -la .daml/dist/ || echo "No .daml/dist directory found"
+
+# Skip build if any DAR exists (to avoid GitHub API issues)
+if ls .daml/dist/*.dar >/dev/null 2>&1; then
+  echo "✅ Found existing DAR files, skipping build"
+else
   echo "🔨 Building DAML project..."
   if command -v daml >/dev/null 2>&1; then
-    daml build
+    # Try offline build first
+    daml build --offline || {
+      echo "⚠️ Offline build failed, trying online..."
+      daml build
+    }
   else
     echo "❌ Cannot find daml binary for build"
     exit 1
