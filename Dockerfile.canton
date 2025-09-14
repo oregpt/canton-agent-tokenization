@@ -1,0 +1,96 @@
+# Dockerfile using Canton JAR directly (no DAML SDK)
+FROM openjdk:17-jdk-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PORT=8080
+WORKDIR /app
+
+# Download Canton JAR directly
+RUN curl -L -o canton.jar https://github.com/digital-asset/canton/releases/download/v20240229.14158.v2.10.2/canton-community-2.10.2.jar
+
+# Copy project files
+COPY . .
+
+# Create Canton configuration
+RUN cat > canton.conf <<'EOF'
+canton {
+  participants {
+    participant1 {
+      storage.type = memory
+      admin-api {
+        address = "0.0.0.0"
+        port = 5012
+      }
+      ledger-api {
+        address = "0.0.0.0"
+        port = 6865
+      }
+    }
+  }
+  domains {
+    local {
+      storage.type = memory
+      public-api {
+        address = "0.0.0.0"
+        port = 5018
+      }
+      admin-api {
+        address = "0.0.0.0"
+        port = 5019
+      }
+    }
+  }
+}
+EOF
+
+# Create startup script
+RUN cat > start-canton.sh <<'EOF'
+#!/bin/bash
+set -e
+
+echo "🚀 Starting Canton with DAR file..."
+
+# Verify DAR exists
+if [ ! -f ".daml/dist/agent-tokenization-v3-3.0.0.dar" ]; then
+    echo "❌ DAR file not found"
+    exit 1
+fi
+
+echo "✅ Found DAR file"
+
+# Start Canton in background
+java -jar canton.jar -c canton.conf --auto-connect-local &
+CANTON_PID=$!
+
+# Wait for Canton to start
+sleep 10
+
+# Simple HTTP server for Render
+python3 -c "
+import http.server
+import socketserver
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(b'{\"status\":\"ready\",\"canton_pid\":$CANTON_PID}')
+
+with socketserver.TCPServer(('', ${PORT}), Handler) as httpd:
+    print(f'HTTP server on port ${PORT}, Canton PID: $CANTON_PID')
+    httpd.serve_forever()
+" &
+
+# Keep container running
+wait $CANTON_PID
+EOF
+
+RUN chmod +x start-canton.sh
+
+CMD ["./start-canton.sh"]

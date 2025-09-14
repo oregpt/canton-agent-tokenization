@@ -1,0 +1,7 @@
+PORT=8080
+DATABASE_URL=postgresql://canton_user:x9VjIV327PRzVQF3kkckk0EuyYNqbCbV@dpg-d32rup8dl3ps738cr23g-a/canton_agent_tokenization
+DATABASE_HOST=dpg-d32rup8dl3ps738cr23g-a
+DATABASE_PORT=5432
+DATABASE_NAME=canton_agent_tokenization
+DATABASE_USER=canton_user
+DATABASE_PASSWORD=x9VjIV327PRzVQF3kkckk0EuyYNqbCbV
