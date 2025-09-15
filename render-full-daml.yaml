@@ -1,5 +1,5 @@
-# Render Blueprint for DAML Agent Tokenization Platform
-# Deploy this entire stack to Render with one click
+# Render Blueprint for Full DAML Agent Tokenization Platform
+# Deploy complete blockchain system with ownership and usage contracts
 
 services:
   # PostgreSQL Database Service
@@ -9,12 +9,13 @@ services:
     databaseName: canton_agent_tokenization
     databaseUser: canton_user
 
-  # Canton Blockchain Service (Native)
+  # Full DAML Blockchain Service
   - type: web
-    name: agent-tokenization-api
+    name: agent-tokenization-full-api
     runtime: docker
-    buildCommand: chmod +x build-simple.sh start-hybrid.sh start-mock.sh && ./build-simple.sh
-    startCommand: ./start-hybrid.sh
+    dockerfilePath: Dockerfile.full-daml
+    buildCommand: echo "Build handled by Dockerfile"
+    startCommand: echo "Start handled by Dockerfile"
     plan: starter
 
     # Environment Variables
@@ -22,7 +23,7 @@ services:
       - key: PORT
         value: "8080"
       - key: JAVA_OPTS
-        value: "-Xmx1g"
+        value: "-Xmx2g -XX:+UseG1GC"
       - key: DATABASE_URL
         fromDatabase:
           name: agent-tokenization-db
@@ -36,7 +37,9 @@ services:
       - key: DATABASE_NAME
         value: "postgres"
       - key: DATABASE_USER
-        value: "postgres"
+        fromDatabase:
+          name: agent-tokenization-db
+          property: user
       - key: DATABASE_PASSWORD
         fromDatabase:
           name: agent-tokenization-db
@@ -44,7 +47,15 @@ services:
       - key: ENVIRONMENT
         value: "production"
       - key: CORS_ORIGIN
-        value: "*" # Update with your web app domain
+        value: "*"
+      - key: RENDER
+        value: "true"
 
     # Auto-deploy on Git push
     autoDeploy: true
+
+    # Disk storage for blockchain data
+    disk:
+      name: blockchain-data
+      mountPath: /app/data
+      sizeGB: 10

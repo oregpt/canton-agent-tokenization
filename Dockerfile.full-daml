@@ -1,0 +1,50 @@
+# Full DAML deployment Dockerfile
+FROM ubuntu:22.04
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    curl \
+    wget \
+    python3 \
+    python3-pip \
+    netcat \
+    unzip \
+    openjdk-17-jdk \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV PORT=8080
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="$PATH:$JAVA_HOME/bin:/root/.daml/bin"
+
+# Set working directory
+WORKDIR /app
+
+# Copy project files
+COPY . .
+
+# Make scripts executable
+RUN chmod +x build-full-daml.sh start-full-daml.sh start-mock.sh
+
+# Build the full DAML system
+RUN ./build-full-daml.sh
+
+# Verify build completed
+RUN echo "🔍 Build verification:" && \
+    ls -la .daml/dist/ && \
+    (daml version || echo "DAML not in PATH") && \
+    (java -version || echo "Java not available")
+
+# Expose ports
+EXPOSE $PORT
+EXPOSE 6865
+EXPOSE 5012
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:$PORT/readyz || exit 1
+
+# Start the full DAML system
+CMD ["./start-full-daml.sh"]
