@@ -26,7 +26,7 @@ WORKDIR /app
 COPY . .
 
 # Make scripts executable
-RUN chmod +x build-full-daml.sh start-full-daml.sh start-mock.sh
+RUN chmod +x build-full-daml.sh start-full-daml.sh start-full-daml-simple.sh start-mock.sh
 
 # Build the full DAML system
 RUN ./build-full-daml.sh
@@ -47,4 +47,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:$PORT/readyz || exit 1
 
 # Start the full DAML system
-CMD ["./start-full-daml.sh"]
+CMD ["./start-full-daml-simple.sh"]
