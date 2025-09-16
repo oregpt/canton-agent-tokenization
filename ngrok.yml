@@ -1,0 +1,11 @@
+version: "2"
+authtoken: YOUR_NGROK_AUTHTOKEN_HERE
+tunnels:
+  auth-service:
+    addr: 8080
+    proto: http
+    subdomain: agent-auth
+  daml-api:
+    addr: 7575
+    proto: http
+    subdomain: agent-daml
