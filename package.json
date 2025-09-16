@@ -10,7 +10,18 @@
   "engines": {
     "node": ">=18"
   },
-  "keywords": ["agent", "tokenization", "daml", "blockchain"],
+  "keywords": [
+    "agent",
+    "tokenization",
+    "daml",
+    "blockchain"
+  ],
   "author": "Claude Code",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "jsonwebtoken": "^9.0.2"
+  }
 }

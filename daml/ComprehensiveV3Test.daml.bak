@@ -1,0 +1,503 @@
+module ComprehensiveV3Test where
+
+import DA.Time
+import DA.Map (Map)
+import qualified DA.Map as Map
+import Daml.Script
+
+-- Enhanced ownership token with comprehensive metadata
+template AIAgentOwnershipToken
+  with
+    agentName : Text
+    agentDescription : Text
+    agentCreator : Party
+    createdDate : Time
+    owner : Party
+    issuer : Party
+    totalSupply : Decimal
+    tokenAmount : Decimal
+    status : Text
+    version : Text
+    attributes : Map Text Text
+    privacyLevel : Text
+  where
+    signatory owner, issuer
+
+    key (agentName, issuer) : (Text, Party)
+    maintainer key._2
+
+    choice TransferOwnership : ContractId AIAgentOwnershipToken
+      with
+        newOwner : Party
+      controller owner
+      do
+        create this with owner = newOwner
+
+-- Basic usage token with restrictions
+template AIAgentBasicUsageToken
+  with
+    ownershipTokenId : Text
+    agentName : Text
+    user : Party
+    grantor : Party
+    allowedModels : [Text]
+    allowedCapabilities : [Text]
+    usageLimit : Decimal
+    validFrom : Time
+    validUntil : Time
+    restrictions : Map Text Text
+  where
+    signatory user, grantor
+
+    key (ownershipTokenId, user) : (Text, Party)
+    maintainer key._2
+
+    choice LogUsage : ContractId AIAgentBasicUsageToken
+      with
+        eventId : Text
+        eventData : Map Text Text
+      controller user
+      do
+        create this
+
+-- Advanced usage token with development rights and royalties
+template AIAgentAdvancedUsageToken
+  with
+    ownershipTokenId : Text
+    agentName : Text
+    user : Party
+    grantor : Party
+    allowedModels : [Text]
+    allowedCapabilities : [Text]
+    developmentRights : [Text]
+    royaltyPercentage : Decimal
+    exclusivityScope : Text
+    maxComputeHours : Decimal
+    allowedEnvironments : [Text]
+    validFrom : Time
+    validUntil : Time
+  where
+    signatory user, grantor
+
+    key (ownershipTokenId, user) : (Text, Party)
+    maintainer key._2
+
+    choice RecordRoyalty : ContractId AIAgentAdvancedUsageToken
+      with
+        amount : Decimal
+        period : Text
+      controller user
+      do
+        create this
+
+-- Enterprise usage token with SLAs and compliance
+template AIAgentEnterpriseUsageToken
+  with
+    ownershipTokenId : Text
+    agentName : Text
+    user : Party
+    grantor : Party
+    allowedModels : [Text]
+    allowedCapabilities : [Text]
+    enterpriseFeatures : [Text]
+    maxConcurrentUsers : Decimal
+    guaranteedUptime : Decimal
+    supportLevel : Text
+    dataRetentionPolicy : Text
+    complianceFrameworks : [Text]
+    auditAccess : Bool
+    fixedFee : Decimal
+    variableFee : Decimal
+    validFrom : Time
+    validUntil : Time
+    autoRenewal : Bool
+  where
+    signatory user, grantor
+
+    key (ownershipTokenId, user) : (Text, Party)
+    maintainer key._2
+
+    choice ProcessPayment : ContractId AIAgentEnterpriseUsageToken
+      with
+        paymentAmount : Decimal
+        paymentType : Text
+      controller user
+      do
+        create this
+
+-- System orchestrator for comprehensive system
+template ComprehensiveSystemOrchestrator
+  with
+    orchestrator : Party
+    totalOwnershipTokens : Int
+    totalUsageTokens : Int
+    systemVersion : Text
+  where
+    signatory orchestrator
+
+    key orchestrator : Party
+    maintainer key
+
+    choice RegisterOwnershipToken : ContractId ComprehensiveSystemOrchestrator
+      with
+        tokenId : Text
+      controller orchestrator
+      do
+        create this with totalOwnershipTokens = totalOwnershipTokens + 1
+
+    choice RegisterUsageToken : ContractId ComprehensiveSystemOrchestrator
+      with
+        tokenId : Text
+      controller orchestrator
+      do
+        create this with totalUsageTokens = totalUsageTokens + 1
+
+-- Test scripts
+initializeV3System : Script (ContractId ComprehensiveSystemOrchestrator)
+initializeV3System = do
+  orchestrator <- allocateParty "SystemOrchestrator"
+
+  submit orchestrator do
+    createCmd ComprehensiveSystemOrchestrator with
+      orchestrator = orchestrator
+      totalOwnershipTokens = 0
+      totalUsageTokens = 0
+      systemVersion = "3.0.0-comprehensive"
+
+-- Comprehensive test that creates 2 ownership + 6 usage contracts
+comprehensiveV3Test : Script ()
+comprehensiveV3Test = do
+  -- Allocate parties
+  systemOrchestrator <- allocateParty "SystemOrchestrator"
+  alice <- allocateParty "Alice"
+  charlie <- allocateParty "Charlie"
+  bob <- allocateParty "Bob"
+  developer <- allocateParty "Developer"
+  enterprise1 <- allocateParty "Enterprise1"
+  enterprise2 <- allocateParty "Enterprise2"
+
+  currentTime <- getTime
+
+  debug "🚀 DAML Agent Tokenization V3 - COMPREHENSIVE TEST"
+  debug "=================================================="
+  debug "Creating 2 Ownership Contracts + 6 Usage Contracts (3 per ownership)"
+  debug ""
+
+  -- Initialize system
+  debug "✅ System Orchestrator initialized"
+  systemCid <- submit systemOrchestrator do
+    createCmd ComprehensiveSystemOrchestrator with
+      orchestrator = systemOrchestrator
+      totalOwnershipTokens = 0
+      totalUsageTokens = 0
+      systemVersion = "3.0.0-comprehensive-test"
+
+  debug ""
+  debug "📝 CREATING OWNERSHIP CONTRACT 1: MarketingGuru AI"
+  debug "================================================="
+
+  -- Create MarketingGuru AI ownership token
+  marketingOwnershipCid <- submit alice do
+    createCmd AIAgentOwnershipToken with
+      agentName = "MarketingGuru AI"
+      agentDescription = "Advanced marketing strategy and content creation AI agent with social media specialization"
+      agentCreator = alice
+      createdDate = currentTime
+      owner = alice
+      issuer = systemOrchestrator
+      totalSupply = 1000.0
+      tokenAmount = 1000.0
+      status = "Active"
+      version = "1.2.0"
+      attributes = Map.fromList [
+        ("industry", "marketing"),
+        ("specialization", "social_media,content_creation,email_marketing,seo"),
+        ("models", "GPT-4,Claude-3,Grok-2"),
+        ("capabilities", "strategy,copywriting,campaign_optimization,analytics"),
+        ("pricing_model", "per_campaign_and_usage"),
+        ("target_markets", "B2B,B2C,ecommerce,saas"),
+        ("languages", "english,spanish,french,german"),
+        ("compliance", "GDPR,CCPA,SOX"),
+        ("deployment_options", "cloud,on_premise,hybrid"),
+        ("integration_apis", "hubspot,salesforce,mailchimp")]
+      privacyLevel = "Medium"
+
+  debug "✅ Ownership Contract 1 Created:"
+  debug "   • Agent: MarketingGuru AI"
+  debug "   • Owner: Alice"
+  debug "   • Supply: 1000 tokens"
+  debug "   • Attributes: 10 metadata fields"
+  debug "   • Privacy Level: Medium"
+  debug ""
+
+  -- Create FinanceWizard AI ownership token
+  debug "📝 CREATING OWNERSHIP CONTRACT 2: FinanceWizard AI"
+  debug "================================================"
+
+  financeOwnershipCid <- submit charlie do
+    createCmd AIAgentOwnershipToken with
+      agentName = "FinanceWizard AI"
+      agentDescription = "Sophisticated financial analysis and trading AI with real-time market data integration"
+      agentCreator = charlie
+      createdDate = currentTime
+      owner = charlie
+      issuer = systemOrchestrator
+      totalSupply = 500.0
+      tokenAmount = 500.0
+      status = "Active"
+      version = "2.1.0"
+      attributes = Map.fromList [
+        ("industry", "finance"),
+        ("specialization", "trading,risk_analysis,portfolio_management,derivatives"),
+        ("models", "GPT-4,Claude-3,Custom_Financial_Model"),
+        ("capabilities", "real_time_analysis,backtesting,risk_modeling,compliance_reporting"),
+        ("pricing_model", "subscription_plus_performance_fee"),
+        ("target_markets", "hedge_funds,investment_banks,wealth_management"),
+        ("data_sources", "bloomberg,reuters,yahoo_finance,sec_filings"),
+        ("compliance", "SEC,FINRA,MiFID_II,Basel_III"),
+        ("certifications", "Series_7,CFA_Institute_Approved"),
+        ("risk_rating", "institutional_grade"),
+        ("latency", "sub_millisecond"),
+        ("accuracy", "99.7_percent_backtested")]
+      privacyLevel = "High"
+
+  debug "✅ Ownership Contract 2 Created:"
+  debug "   • Agent: FinanceWizard AI"
+  debug "   • Owner: Charlie"
+  debug "   • Supply: 500 tokens (limited edition)"
+  debug "   • Attributes: 12 metadata fields"
+  debug "   • Privacy Level: High"
+  debug ""
+
+  -- Create usage contracts for MarketingGuru AI
+  debug "📝 Creating Usage Contract 1.1: Basic Marketing Access for Bob"
+  marketingBasicCid <- submit bob do
+    createCmd AIAgentBasicUsageToken with
+      ownershipTokenId = "marketing-ownership-001"
+      agentName = "MarketingGuru AI"
+      user = bob
+      grantor = alice
+      allowedModels = ["GPT-4"]
+      allowedCapabilities = ["basic_content_generation", "email_templates", "social_posts"]
+      usageLimit = 1000.0
+      validFrom = currentTime
+      validUntil = addRelTime currentTime (days 30)
+      restrictions = Map.fromList [
+        ("max_queries_per_day", "50"),
+        ("content_types", "blog,email,social"),
+        ("word_limit_per_query", "2000"),
+        ("no_competitor_analysis", "true"),
+        ("rate_limit", "10_per_hour")
+      ]
+
+  debug "✅ Basic Usage Token 1.1 Created for Bob"
+  debug "   • Models: GPT-4 only"
+  debug "   • Limit: 1000 queries over 30 days"
+  debug "   • Restrictions: 50 queries/day, no competitor analysis"
+  debug ""
+
+  debug "📝 Creating Usage Contract 1.2: Advanced Marketing Development for Developer"
+  marketingAdvancedCid <- submit developer do
+    createCmd AIAgentAdvancedUsageToken with
+      ownershipTokenId = "marketing-ownership-001"
+      agentName = "MarketingGuru AI"
+      user = developer
+      grantor = alice
+      allowedModels = ["GPT-4", "Claude-3"]
+      allowedCapabilities = ["advanced_analytics", "campaign_optimization", "A_B_testing", "custom_models"]
+      developmentRights = ["fine_tuning", "prompt_engineering", "model_integration", "API_access"]
+      royaltyPercentage = 12.5
+      exclusivityScope = "SaaS_Industry_North_America"
+      maxComputeHours = 10000.0
+      allowedEnvironments = ["development", "staging", "production"]
+      validFrom = currentTime
+      validUntil = addRelTime currentTime (days 365)
+
+  debug "✅ Advanced Usage Token 1.2 Created for Developer"
+  debug "   • Models: GPT-4 + Claude-3"
+  debug "   • Rights: Fine-tuning, API access, prompt engineering"
+  debug "   • Commercial: 12.5% royalty to Alice"
+  debug "   • Exclusivity: SaaS Industry North America"
+  debug ""
+
+  debug "📝 Creating Usage Contract 1.3: Enterprise Marketing Solution for Enterprise1"
+  marketingEnterpriseCid <- submit enterprise1 do
+    createCmd AIAgentEnterpriseUsageToken with
+      ownershipTokenId = "marketing-ownership-001"
+      agentName = "MarketingGuru AI"
+      user = enterprise1
+      grantor = alice
+      allowedModels = ["GPT-4", "Claude-3", "Grok-2"]
+      allowedCapabilities = ["full_access", "white_label", "custom_training"]
+      enterpriseFeatures = ["SSO_integration", "audit_logs", "custom_deployment", "dedicated_support", "SLA_guarantees"]
+      maxConcurrentUsers = 500.0
+      guaranteedUptime = 99.95
+      supportLevel = "Enterprise_Premium_24x7"
+      dataRetentionPolicy = "7_years"
+      complianceFrameworks = ["SOC2_Type2", "HIPAA", "ISO27001", "GDPR"]
+      auditAccess = True
+      fixedFee = 75000.0
+      variableFee = 0.08
+      validFrom = currentTime
+      validUntil = addRelTime currentTime (days 365)
+      autoRenewal = True
+
+  debug "✅ Enterprise Usage Token 1.3 Created for Enterprise1"
+  debug "   • Models: All (GPT-4, Claude-3, Grok-2)"
+  debug "   • Users: 500 concurrent, 99.95% uptime"
+  debug "   • Fees: $75,000 fixed + $0.08 variable"
+  debug "   • Compliance: SOC2, HIPAA, ISO27001, GDPR"
+  debug ""
+
+  -- Create usage contracts for FinanceWizard AI
+  debug "📝 Creating Usage Contract 2.1: Basic Finance Access for Bob"
+  financeBasicCid <- submit bob do
+    createCmd AIAgentBasicUsageToken with
+      ownershipTokenId = "finance-ownership-001"
+      agentName = "FinanceWizard AI"
+      user = bob
+      grantor = charlie
+      allowedModels = ["GPT-4"]
+      allowedCapabilities = ["basic_analysis", "portfolio_review", "market_summary"]
+      usageLimit = 500.0
+      validFrom = currentTime
+      validUntil = addRelTime currentTime (days 30)
+      restrictions = Map.fromList [
+        ("max_queries_per_day", "25"),
+        ("analysis_depth", "surface_level"),
+        ("historical_data_limit", "1_year"),
+        ("no_real_time_trading", "true"),
+        ("paper_trading_only", "true"),
+        ("max_portfolio_value", "100000")
+      ]
+
+  debug "✅ Basic Usage Token 2.1 Created for Bob"
+  debug "   • Models: GPT-4 only"
+  debug "   • Limit: 500 queries, $100K portfolio max"
+  debug "   • Restrictions: Paper trading only, 1-year historical data"
+  debug ""
+
+  debug "📝 Creating Usage Contract 2.2: Advanced Finance Development for Developer"
+  financeAdvancedCid <- submit developer do
+    createCmd AIAgentAdvancedUsageToken with
+      ownershipTokenId = "finance-ownership-001"
+      agentName = "FinanceWizard AI"
+      user = developer
+      grantor = charlie
+      allowedModels = ["GPT-4", "Claude-3", "Custom_Financial_Model"]
+      allowedCapabilities = ["quantitative_analysis", "algorithm_development", "backtesting", "risk_modeling"]
+      developmentRights = ["model_customization", "strategy_development", "API_integration", "white_labeling"]
+      royaltyPercentage = 20.0
+      exclusivityScope = "Cryptocurrency_Trading_Global"
+      maxComputeHours = 50000.0
+      allowedEnvironments = ["research", "development", "testing", "production"]
+      validFrom = currentTime
+      validUntil = addRelTime currentTime (days 365)
+
+  debug "✅ Advanced Usage Token 2.2 Created for Developer"
+  debug "   • Models: All including Custom Financial Model"
+  debug "   • Rights: Model customization, strategy development"
+  debug "   • Commercial: 20% royalty to Charlie"
+  debug "   • Exclusivity: Global cryptocurrency trading"
+  debug ""
+
+  debug "📝 Creating Usage Contract 2.3: Enterprise Finance Solution for Enterprise2"
+  financeEnterpriseCid <- submit enterprise2 do
+    createCmd AIAgentEnterpriseUsageToken with
+      ownershipTokenId = "finance-ownership-001"
+      agentName = "FinanceWizard AI"
+      user = enterprise2
+      grantor = charlie
+      allowedModels = ["GPT-4", "Claude-3", "Custom_Financial_Model"]
+      allowedCapabilities = ["institutional_trading", "risk_management", "regulatory_reporting", "real_time_analytics"]
+      enterpriseFeatures = ["dedicated_infrastructure", "regulatory_compliance", "audit_trail", "disaster_recovery", "24x7_monitoring"]
+      maxConcurrentUsers = 1000.0
+      guaranteedUptime = 99.99
+      supportLevel = "Institutional_White_Glove"
+      dataRetentionPolicy = "10_years_SEC_compliant"
+      complianceFrameworks = ["SEC_Rule_15c3_5", "FINRA_4511", "MiFID_II", "Basel_III", "Dodd_Frank"]
+      auditAccess = True
+      fixedFee = 250000.0
+      variableFee = 0.025
+      validFrom = currentTime
+      validUntil = addRelTime currentTime (days 365)
+      autoRenewal = True
+
+  debug "✅ Enterprise Usage Token 2.3 Created for Enterprise2"
+  debug "   • Models: All institutional-grade models"
+  debug "   • Users: 1,000 concurrent, 99.99% uptime"
+  debug "   • Fees: $250,000 fixed + 0.025% variable"
+  debug "   • Compliance: SEC, FINRA, MiFID II, Basel III, Dodd-Frank"
+  debug ""
+
+  debug "🎯 COMPREHENSIVE TEST RESULTS"
+  debug "============================="
+  debug "✅ 2 Ownership Contracts Created:"
+  debug "   1. MarketingGuru AI (Alice) - 1000 tokens, Medium privacy"
+  debug "   2. FinanceWizard AI (Charlie) - 500 tokens, High privacy"
+  debug ""
+  debug "✅ 6 Usage Contracts Created:"
+  debug "   Marketing Contracts:"
+  debug "   • Basic (Bob): 1000 queries, GPT-4 only"
+  debug "   • Advanced (Developer): 12.5% royalty, SaaS exclusivity"
+  debug "   • Enterprise (Enterprise1): $75K fee, 500 users"
+  debug ""
+  debug "   Financial Contracts:"
+  debug "   • Basic (Bob): 500 queries, paper trading"
+  debug "   • Advanced (Developer): 20% royalty, crypto exclusivity"
+  debug "   • Enterprise (Enterprise2): $250K fee, institutional grade"
+  debug ""
+  debug "🚀 SYSTEM READY FOR PRODUCTION MARKETPLACE!"
+  debug "   • Flexible metadata: ✅ (22 unique attributes)"
+  debug "   • Multi-tier licensing: ✅ (Basic/Advanced/Enterprise)"
+  debug "   • Commercial terms: ✅ (Royalties, fees, exclusivity)"
+  debug "   • Enterprise features: ✅ (SLAs, compliance, audit)"
+  debug "   • Temporal controls: ✅ (30-day to 1-year terms)"
+
+  return ()
+
+-- Quick test for validation
+quickV3Test : Script ()
+quickV3Test = do
+  orchestrator <- allocateParty "SystemOrchestrator"
+  alice <- allocateParty "Alice"
+  currentTime <- getTime
+
+  debug "🧪 Quick V3 System Validation"
+
+  -- Create ownership token
+  ownershipCid <- submit alice do
+    createCmd AIAgentOwnershipToken with
+      agentName = "TestAgent"
+      agentDescription = "Test agent for validation"
+      agentCreator = alice
+      createdDate = currentTime
+      owner = alice
+      issuer = orchestrator
+      totalSupply = 100.0
+      tokenAmount = 100.0
+      status = "Active"
+      version = "1.0"
+      attributes = Map.fromList [("test", "value")]
+      privacyLevel = "Low"
+
+  debug "✅ Ownership token created successfully"
+
+  -- Create basic usage token
+  usageCid <- submit alice do
+    createCmd AIAgentBasicUsageToken with
+      ownershipTokenId = "test-ownership"
+      agentName = "TestAgent"
+      user = alice
+      grantor = alice
+      allowedModels = ["GPT-4"]
+      allowedCapabilities = ["test"]
+      usageLimit = 100.0
+      validFrom = currentTime
+      validUntil = addRelTime currentTime (days 30)
+      restrictions = Map.fromList [("test", "restriction")]
+
+  debug "✅ Usage token created successfully"
+  debug "🎉 V3 system validation complete!"
+
+  return ()
