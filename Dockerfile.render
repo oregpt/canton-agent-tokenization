@@ -1,41 +1,51 @@
-# Production-ready Dockerfile for Render deployment
+# Production DAML Dockerfile for Render deployment
 FROM ubuntu:22.04
 
-# Install system dependencies
+# Install system dependencies including PostgreSQL client
 RUN apt-get update && \
     apt-get install -y \
     curl \
     wget \
     python3 \
     python3-pip \
-    netcat \
+    netcat-openbsd \
     openjdk-17-jdk \
     unzip \
+    postgresql-client \
+    ca-certificates \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
+# Set environment variables for DAML
 ENV PORT=8080
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$PATH:$JAVA_HOME/bin:/root/.daml/bin"
+ENV DAML_SDK_VERSION=2.10.2
 
 # Set working directory
 WORKDIR /app
 
-# Copy all files
+# Copy project files
 COPY . .
 
 # Make scripts executable
 RUN chmod +x build-simple.sh start-hybrid.sh start-mock.sh
 
-# Try to install DAML SDK (will fallback to mock if this fails)
-RUN ./build-simple.sh || echo "DAML build failed, will use mock API"
+# Build DAML project (fail the build if DAML fails)
+RUN echo "🚀 Installing DAML SDK and building project..." && \
+    ./build-simple.sh
+
+# Verify DAML installation worked
+RUN daml version && \
+    ls -la .daml/dist/ && \
+    echo "✅ DAML build verification complete"
 
 # Expose port
 EXPOSE $PORT
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+# Health check with longer timeout for DAML startup
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=5 \
     CMD curl -f http://localhost:$PORT/readyz || exit 1
 
-# Start the application
+# Start the real DAML application
 CMD ["./start-hybrid.sh"]
