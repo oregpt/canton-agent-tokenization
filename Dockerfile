@@ -39,5 +39,18 @@ ENV SUPABASE_DB_PASSWORD=""
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:7575/readyz || exit 1
 
-# Start Canton directly without script file
-CMD ["daml", "start", "--sandbox-option", "--config=canton-supabase.conf", "--json-api-option", "--allow-insecure-tokens", "--start-navigator=no", "--json-api-port=7575", "--sandbox-port=6865"]
+# Debug network connectivity before starting Canton
+RUN echo '#!/bin/bash' > debug-start.sh && \
+    echo 'echo "=== Network Debug Info ==="' >> debug-start.sh && \
+    echo 'echo "Testing DNS resolution:"' >> debug-start.sh && \
+    echo 'nslookup db.ovemmdtqavjkyuvikfqj.supabase.co || echo "DNS resolution failed"' >> debug-start.sh && \
+    echo 'echo "Testing network connectivity:"' >> debug-start.sh && \
+    echo 'ping -c 3 db.ovemmdtqavjkyuvikfqj.supabase.co || echo "Ping failed"' >> debug-start.sh && \
+    echo 'echo "Testing PostgreSQL port:"' >> debug-start.sh && \
+    echo 'timeout 10 bash -c "</dev/tcp/db.ovemmdtqavjkyuvikfqj.supabase.co/5432" && echo "Port 5432 accessible" || echo "Port 5432 not accessible"' >> debug-start.sh && \
+    echo 'echo "=== Starting Canton ==="' >> debug-start.sh && \
+    echo 'daml start --sandbox-option --config=canton-debug.conf --json-api-option --allow-insecure-tokens --start-navigator=no --json-api-port=7575 --sandbox-port=6865' >> debug-start.sh && \
+    chmod +x debug-start.sh
+
+# Start with debug script
+CMD ["bash", "debug-start.sh"]
