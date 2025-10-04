@@ -40,4 +40,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:7575/readyz || exit 1
 
 # Start Canton directly without script file
-CMD ["daml", "start", "--sandbox-option", "--config=canton-supabase.conf", "--json-api-option", "--allow-insecure-tokens", "--start-navigator=no", "--json-api-port=7575", "--sandbox-port=6865", "--script-name", "AgentTokenizationV2:initializeV2System"]
+CMD ["daml", "start", "--sandbox-option", "--config=canton-supabase.conf", "--json-api-option", "--allow-insecure-tokens", "--start-navigator=no", "--json-api-port=7575", "--sandbox-port=6865"]
