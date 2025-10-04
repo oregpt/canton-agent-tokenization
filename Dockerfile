@@ -44,8 +44,8 @@ EXPOSE 5011 5012 5018 5019 6865 7575
 # Environment variables (DATABASE_URL will be provided by Railway)
 ENV SUPABASE_DB_PASSWORD=""
 
-# JVM Memory optimization for Railway deployment - Minimal settings to prevent crash loop
-ENV JAVA_OPTS="-Xmx384m -Xms96m -XX:MaxMetaspaceSize=96m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+# JVM Memory optimization for Railway deployment - Minimal settings with JMX disabled
+ENV JAVA_OPTS="-Xmx384m -Xms96m -XX:MaxMetaspaceSize=96m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Dcom.sun.management.jmxremote=false"
 
 # Health check for DAML JSON API
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
