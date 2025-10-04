@@ -46,7 +46,7 @@ ENV SUPABASE_DB_PASSWORD=""
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:${PORT:-7575}/readyz || exit 1
 
-# Debug network connectivity before starting Canton
+# Create startup script with proper JDBC driver setup
 RUN echo '#!/bin/bash' > debug-start.sh && \
     echo 'echo "=== Environment Debug Info ==="' >> debug-start.sh && \
     echo 'echo "DATABASE_URL: $DATABASE_URL"' >> debug-start.sh && \
@@ -56,8 +56,14 @@ RUN echo '#!/bin/bash' > debug-start.sh && \
     echo '# Set default PORT if not provided by Railway' >> debug-start.sh && \
     echo 'export PORT=${PORT:-8080}' >> debug-start.sh && \
     echo 'echo "Using PORT: $PORT"' >> debug-start.sh && \
+    echo 'echo "=== Preparing JDBC Driver ==="' >> debug-start.sh && \
+    echo '# Add JDBC driver to Canton classpath' >> debug-start.sh && \
+    echo 'export DAML_SDK_VERSION=2.8.0' >> debug-start.sh && \
+    echo 'export CANTON_JAR_PATH="/root/.daml/sdk/${DAML_SDK_VERSION}/canton/lib"' >> debug-start.sh && \
+    echo 'mkdir -p "$CANTON_JAR_PATH"' >> debug-start.sh && \
+    echo 'cp /app/lib/postgresql-42.6.0.jar "$CANTON_JAR_PATH/"' >> debug-start.sh && \
+    echo 'echo "JDBC driver copied to Canton lib: $(ls -la $CANTON_JAR_PATH/postgresql*.jar)"' >> debug-start.sh && \
     echo 'echo "=== Starting Canton ==="' >> debug-start.sh && \
-    echo 'export JAVA_OPTS="-cp /app/lib/postgresql-42.6.0.jar:$CLASSPATH"' >> debug-start.sh && \
     echo 'daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --sandbox-port=6865' >> debug-start.sh && \
     chmod +x debug-start.sh
 
