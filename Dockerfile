@@ -49,4 +49,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:7575/readyz || exit 1
 
 # Start Canton
-CMD ["./start.sh"]
+CMD ["bash", "start.sh"]
