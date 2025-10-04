@@ -21,6 +21,13 @@ RUN for i in 1 2 3; do \
 # Add DAML to PATH
 ENV PATH="/root/.daml/bin:${PATH}"
 
+# Download PostgreSQL JDBC driver for Canton
+RUN mkdir -p /app/lib && \
+    wget https://jdbc.postgresql.org/download/postgresql-42.6.0.jar -O /app/lib/postgresql-42.6.0.jar
+
+# Add JDBC driver to classpath
+ENV CLASSPATH="/app/lib/postgresql-42.6.0.jar:${CLASSPATH}"
+
 # Copy project files
 COPY . .
 
@@ -41,14 +48,12 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 # Debug network connectivity before starting Canton
 RUN echo '#!/bin/bash' > debug-start.sh && \
-    echo 'echo "=== Network Debug Info ==="' >> debug-start.sh && \
-    echo 'echo "Testing DNS resolution:"' >> debug-start.sh && \
-    echo 'nslookup db.ovemmdtqavjkyuvikfqj.supabase.co || echo "DNS resolution failed"' >> debug-start.sh && \
-    echo 'echo "Testing network connectivity:"' >> debug-start.sh && \
-    echo 'ping -c 3 db.ovemmdtqavjkyuvikfqj.supabase.co || echo "Ping failed"' >> debug-start.sh && \
-    echo 'echo "Testing PostgreSQL port:"' >> debug-start.sh && \
-    echo 'timeout 10 bash -c "</dev/tcp/db.ovemmdtqavjkyuvikfqj.supabase.co/5432" && echo "Port 5432 accessible" || echo "Port 5432 not accessible"' >> debug-start.sh && \
+    echo 'echo "=== Environment Debug Info ==="' >> debug-start.sh && \
+    echo 'echo "DATABASE_URL: $DATABASE_URL"' >> debug-start.sh && \
+    echo 'echo "CLASSPATH: $CLASSPATH"' >> debug-start.sh && \
+    echo 'echo "JDBC Driver exists: $(ls -la /app/lib/postgresql-42.6.0.jar)"' >> debug-start.sh && \
     echo 'echo "=== Starting Canton ==="' >> debug-start.sh && \
+    echo 'export JAVA_OPTS="-cp /app/lib/postgresql-42.6.0.jar:$CLASSPATH"' >> debug-start.sh && \
     echo 'daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --json-api-port=7575 --sandbox-port=6865' >> debug-start.sh && \
     chmod +x debug-start.sh
 
