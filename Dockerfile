@@ -46,9 +46,9 @@ ENV SUPABASE_DB_PASSWORD=""
 # JVM Memory optimization for Railway deployment
 ENV JAVA_OPTS="-Xmx1024m -Xms256m -XX:MaxMetaspaceSize=256m -XX:+UseG1GC -XX:+UseContainerSupport"
 
-# Health check
+# Health check for DAML JSON API
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-7575}/readyz || exit 1
+  CMD curl -f http://localhost:${PORT:-7575}/v1/packages || exit 1
 
 # Create startup script that resolves DATABASE_URL before starting Canton
 RUN echo '#!/bin/bash' > start.sh && \
