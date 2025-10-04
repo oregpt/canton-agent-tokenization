@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     gettext-base \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -67,8 +68,17 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'cp /app/lib/postgresql-42.6.0.jar "$CANTON_JAR_PATH/"' >> start.sh && \
     echo 'echo "JDBC driver ready: $(ls -la $CANTON_JAR_PATH/postgresql*.jar)"' >> start.sh && \
     echo 'echo "=== Creating Runtime Canton Config ==="' >> start.sh && \
-    echo '# Convert Railway DATABASE_URL to JDBC format' >> start.sh && \
-    echo 'export JDBC_DATABASE_URL=$(echo "$DATABASE_URL" | sed "s/postgresql:/jdbc:postgresql:/")' >> start.sh && \
+    echo '# Convert Railway DATABASE_URL to proper JDBC format' >> start.sh && \
+    echo 'export JDBC_DATABASE_URL=$(python3 -c "' >> start.sh && \
+    echo 'import os, re' >> start.sh && \
+    echo 'url = os.environ[\"DATABASE_URL\"]' >> start.sh && \
+    echo 'match = re.match(r\"postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)\", url)' >> start.sh && \
+    echo 'if match:' >> start.sh && \
+    echo '    user, password, host, port, db = match.groups()' >> start.sh && \
+    echo '    print(f\"jdbc:postgresql://{host}:{port}/{db}?user={user}&password={password}\")' >> start.sh && \
+    echo 'else:' >> start.sh && \
+    echo '    print(url.replace(\"postgresql:\", \"jdbc:postgresql:\"))' >> start.sh && \
+    echo '")' >> start.sh && \
     echo 'echo "Original DATABASE_URL: $DATABASE_URL"' >> start.sh && \
     echo 'echo "JDBC DATABASE_URL: $JDBC_DATABASE_URL"' >> start.sh && \
     echo '# Substitute JDBC URL in config file' >> start.sh && \
