@@ -94,8 +94,6 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'DATABASE_URL="$JDBC_DATABASE_URL" envsubst < canton-railway.conf > canton-runtime.conf' >> start.sh && \
     echo 'echo "Config created with DATABASE_URL resolved"' >> start.sh && \
     echo 'echo "=== Starting Canton ==="' >> start.sh && \
-    echo '# Completely disable JVM management agent startup' >> start.sh && \
-    echo 'export JAVA_TOOL_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions -Dcom.sun.management.jmxremote=false -Djdk.management.agent.disable=true"' >> start.sh && \
     echo 'exec daml start --sandbox-option --config=canton-runtime.conf --json-api-port=${PORT} --start-navigator=no --sandbox-port=6865' >> start.sh && \
     chmod +x start.sh
 
