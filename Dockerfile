@@ -12,11 +12,8 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Install DAML SDK
-ENV DAML_SDK_VERSION=2.8.0
-RUN curl -L https://github.com/digital-asset/daml/releases/download/v${DAML_SDK_VERSION}/daml-sdk-${DAML_SDK_VERSION}-linux.tar.gz | tar -xz -C /tmp \
-    && /tmp/daml/install.sh \
-    && rm -rf /tmp/daml
+# Install DAML SDK using the installer script
+RUN curl -sSL https://get.daml.com/ | sh -s 2.8.0
 
 # Add DAML to PATH
 ENV PATH="/root/.daml/bin:${PATH}"
