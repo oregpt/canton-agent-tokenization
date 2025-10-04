@@ -49,7 +49,7 @@ RUN echo '#!/bin/bash' > debug-start.sh && \
     echo 'echo "Testing PostgreSQL port:"' >> debug-start.sh && \
     echo 'timeout 10 bash -c "</dev/tcp/db.ovemmdtqavjkyuvikfqj.supabase.co/5432" && echo "Port 5432 accessible" || echo "Port 5432 not accessible"' >> debug-start.sh && \
     echo 'echo "=== Starting Canton ==="' >> debug-start.sh && \
-    echo 'daml start --sandbox-option --config=canton-debug.conf --json-api-option --allow-insecure-tokens --start-navigator=no --json-api-port=7575 --sandbox-port=6865' >> debug-start.sh && \
+    echo 'daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --json-api-port=7575 --sandbox-port=6865' >> debug-start.sh && \
     chmod +x debug-start.sh
 
 # Start with debug script
