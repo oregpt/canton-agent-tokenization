@@ -53,6 +53,9 @@ RUN echo '#!/bin/bash' > debug-start.sh && \
     echo 'echo "PORT: $PORT"' >> debug-start.sh && \
     echo 'echo "CLASSPATH: $CLASSPATH"' >> debug-start.sh && \
     echo 'echo "JDBC Driver exists: $(ls -la /app/lib/postgresql-42.6.0.jar)"' >> debug-start.sh && \
+    echo '# Set default PORT if not provided by Railway' >> debug-start.sh && \
+    echo 'export PORT=${PORT:-8080}' >> debug-start.sh && \
+    echo 'echo "Using PORT: $PORT"' >> debug-start.sh && \
     echo 'echo "=== Starting Canton ==="' >> debug-start.sh && \
     echo 'export JAVA_OPTS="-cp /app/lib/postgresql-42.6.0.jar:$CLASSPATH"' >> debug-start.sh && \
     echo 'daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --sandbox-port=6865' >> debug-start.sh && \
