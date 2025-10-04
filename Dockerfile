@@ -24,19 +24,7 @@ COPY . .
 # Build the DAR file
 RUN daml build
 
-# Create startup script
-RUN echo '#!/bin/bash' > start.sh && \
-    echo 'echo "Starting Canton with Supabase..."' >> start.sh && \
-    echo '' >> start.sh && \
-    echo '# Start Canton with JSON API' >> start.sh && \
-    echo 'daml start \' >> start.sh && \
-    echo '  --sandbox-option --config=canton-supabase.conf \' >> start.sh && \
-    echo '  --json-api-option --allow-insecure-tokens \' >> start.sh && \
-    echo '  --start-navigator=no \' >> start.sh && \
-    echo '  --json-api-port=7575 \' >> start.sh && \
-    echo '  --sandbox-port=6865 \' >> start.sh && \
-    echo '  --script-name AgentTokenizationV2:initializeV2System' >> start.sh && \
-    chmod 755 start.sh
+# No startup script needed - run directly
 
 # Expose ports
 EXPOSE 5011 5012 5018 5019 6865 7575
@@ -48,5 +36,5 @@ ENV SUPABASE_DB_PASSWORD=""
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:7575/readyz || exit 1
 
-# Start Canton
-CMD ["bash", "/app/start.sh"]
+# Start Canton directly without script file
+CMD ["daml", "start", "--sandbox-option", "--config=canton-supabase.conf", "--json-api-option", "--allow-insecure-tokens", "--start-navigator=no", "--json-api-port=7575", "--sandbox-port=6865", "--script-name", "AgentTokenizationV2:initializeV2System"]
