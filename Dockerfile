@@ -71,7 +71,7 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'envsubst < canton-railway.conf > canton-runtime.conf' >> start.sh && \
     echo 'echo "Config created with DATABASE_URL resolved"' >> start.sh && \
     echo 'echo "=== Starting Canton ==="' >> start.sh && \
-    echo 'exec daml start --sandbox-option --config=canton-runtime.conf --json-api-option --allow-insecure-tokens --start-navigator=no --sandbox-port=6865' >> start.sh && \
+    echo 'exec daml start --sandbox-option --config=canton-runtime.conf --json-api-option --allow-insecure-tokens --json-api-port=${PORT} --start-navigator=no --sandbox-port=6865' >> start.sh && \
     chmod +x start.sh
 
 # Start with optimized script
