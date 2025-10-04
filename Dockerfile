@@ -67,8 +67,12 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'cp /app/lib/postgresql-42.6.0.jar "$CANTON_JAR_PATH/"' >> start.sh && \
     echo 'echo "JDBC driver ready: $(ls -la $CANTON_JAR_PATH/postgresql*.jar)"' >> start.sh && \
     echo 'echo "=== Creating Runtime Canton Config ==="' >> start.sh && \
-    echo '# Substitute DATABASE_URL in config file' >> start.sh && \
-    echo 'envsubst < canton-railway.conf > canton-runtime.conf' >> start.sh && \
+    echo '# Convert Railway DATABASE_URL to JDBC format' >> start.sh && \
+    echo 'export JDBC_DATABASE_URL=$(echo "$DATABASE_URL" | sed "s/postgresql:/jdbc:postgresql:/")' >> start.sh && \
+    echo 'echo "Original DATABASE_URL: $DATABASE_URL"' >> start.sh && \
+    echo 'echo "JDBC DATABASE_URL: $JDBC_DATABASE_URL"' >> start.sh && \
+    echo '# Substitute JDBC URL in config file' >> start.sh && \
+    echo 'DATABASE_URL="$JDBC_DATABASE_URL" envsubst < canton-railway.conf > canton-runtime.conf' >> start.sh && \
     echo 'echo "Config created with DATABASE_URL resolved"' >> start.sh && \
     echo 'echo "=== Starting Canton ==="' >> start.sh && \
     echo 'exec daml start --sandbox-option --config=canton-runtime.conf --json-api-option --allow-insecure-tokens --json-api-port=${PORT} --start-navigator=no --sandbox-port=6865' >> start.sh && \
