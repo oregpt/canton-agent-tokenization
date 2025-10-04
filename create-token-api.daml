@@ -1,0 +1,37 @@
+module CreateTokenAPI where
+
+import Daml.Script
+import AgentTokenizationV2
+import DA.Time
+
+-- Working API for token creation using DAML Script
+-- This bypasses the broken JSON API template resolution
+
+createSimpleToken : Text -> Text -> Text -> Script (ContractId SimpleAgentToken)
+createSimpleToken tokenId agentId ownerName = do
+  owner <- allocateParty ownerName
+  currentTime <- getTime
+
+  let metadata = AgentIdentity with
+        agentId = agentId
+        name = "Generated Token Agent"
+        description = "Agent token created via working API"
+        createdAt = currentTime
+        version = "1.0"
+
+  submit owner $ createCmd SimpleAgentToken with
+    tokenId = tokenId
+    agentId = agentId
+    owner = owner
+    metadata = metadata
+    isActive = True
+
+-- Example: Create a test token
+createTestToken : Script (ContractId SimpleAgentToken)
+createTestToken = do
+  createSimpleToken "test_token_001" "test_agent_001" "Alice"
+
+-- Batch token creation
+createMultipleTokens : [Text] -> Text -> Text -> Script [ContractId SimpleAgentToken]
+createMultipleTokens tokenIds agentId ownerName = do
+  mapA (\tokenId -> createSimpleToken tokenId agentId ownerName) tokenIds

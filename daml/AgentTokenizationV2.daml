@@ -249,11 +249,25 @@ demoV2System = do
   
   return ()
 
+-- Single-party template for JSON API compatibility
+template SimpleAgentToken
+  with
+    tokenId : Text
+    agentId : Text
+    owner : Party
+    metadata : AgentIdentity
+    isActive : Bool
+  where
+    signatory owner  -- Only one party signature required
+
+    key (tokenId, owner) : (Text, Party)
+    maintainer key._2
+
 -- Initialize the system
 initializeV2System : Script (ContractId SystemOrchestrator)
 initializeV2System = do
   orchestrator <- allocateParty "SystemOrchestrator"
-  
+
   submit orchestrator $ createCmd SystemOrchestrator with
     orchestrator = orchestrator
     totalRegistrations = 0

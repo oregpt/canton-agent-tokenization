@@ -5,7 +5,12 @@ const jwt = require('jsonwebtoken');
 const SECRET = 'daml-agent-tokenization-secret-2024';
 
 // Create tokens for each party with 180 days expiry
-const parties = ['SystemOrchestrator', 'Alice', 'Bob', 'Enterprise'];
+const parties = [
+  'SystemOrchestrator::122020c8c9ede3ff3fbf8ad77ff24cac4def63e84f68b7f1cc5a9c3b91b0be0b8f5',
+  'Alice::122020c8c9ede3ff3fbf8ad77ff24cac4def63e84f68b7f1cc5a9c3b91b0be0b8f5',
+  'Bob::122020c8c9ede3ff3fbf8ad77ff24cac4def63e84f68b7f1cc5a9c3b91b0be0b8f5',
+  'Enterprise::122020c8c9ede3ff3fbf8ad77ff24cac4def63e84f68b7f1cc5a9c3b91b0be0b8f5'
+];
 
 console.log('🔐 DAML JWT Tokens for Agent Tokenization (180 Days Valid)\n');
 

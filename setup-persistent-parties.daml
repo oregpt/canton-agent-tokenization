@@ -1,0 +1,47 @@
+module SetupPersistentParties where
+
+import Daml.Script
+
+data PersistentParties = PersistentParties with
+  alice : Party
+  bob : Party
+  enterprise : Party
+  systemOrchestrator : Party
+    deriving (Eq, Show)
+
+setupPersistentParties : Script PersistentParties
+setupPersistentParties = do
+  -- Allocate persistent parties with specific party hints
+  alice <- allocatePartyWithHint "Alice" (PartyIdHint "Alice")
+  bob <- allocatePartyWithHint "Bob" (PartyIdHint "Bob")
+  enterprise <- allocatePartyWithHint "Enterprise" (PartyIdHint "Enterprise")
+  systemOrchestrator <- allocatePartyWithHint "SystemOrchestrator" (PartyIdHint "SystemOrchestrator")
+
+  -- Display the allocated party IDs for JWT generation
+  debug ("=== PERSISTENT PARTIES ALLOCATED ===")
+  debug ("Alice: " <> show alice)
+  debug ("Bob: " <> show bob)
+  debug ("Enterprise: " <> show enterprise)
+  debug ("SystemOrchestrator: " <> show systemOrchestrator)
+  debug ("========================================")
+
+  return PersistentParties with
+    alice = alice
+    bob = bob
+    enterprise = enterprise
+    systemOrchestrator = systemOrchestrator
+
+-- Export party IDs for external use
+exportPartyIds : Script ()
+exportPartyIds = do
+  parties <- setupPersistentParties
+
+  -- Create a simple text file format for easy parsing
+  debug ("PARTY_EXPORT_START")
+  debug ("ALICE=" <> show parties.alice)
+  debug ("BOB=" <> show parties.bob)
+  debug ("ENTERPRISE=" <> show parties.enterprise)
+  debug ("SYSTEM_ORCHESTRATOR=" <> show parties.systemOrchestrator)
+  debug ("PARTY_EXPORT_END")
+
+  return ()

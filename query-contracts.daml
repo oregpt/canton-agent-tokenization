@@ -1,0 +1,64 @@
+module QueryContracts where
+
+import Daml.Script
+import AgentTokenizationV2
+
+-- Script to query and display all contracts on the ledger
+showLedgerState : Script ()
+showLedgerState = do
+  alice <- allocateParty "Alice"
+  orchestrator <- allocateParty "SystemOrchestrator"
+
+  debug "🔍 QUERYING BLOCKCHAIN LEDGER STATE..."
+  debug "==============================================="
+
+  -- Query AgentRegistration contracts
+  agentRegs <- query @AgentRegistration alice
+  debug $ "📋 AGENT REGISTRATION CONTRACTS: " <> show (length agentRegs)
+  mapA_ (\(cid, contract) -> do
+    debug $ "  ✅ Contract ID: " <> show cid
+    debug $ "     Agent ID: " <> contract.agentId
+    debug $ "     Owner: " <> show contract.owner
+    debug $ "     Active: " <> show contract.isActive
+    debug $ "     Metadata: " <> contract.metadata.name
+    debug ""
+  ) agentRegs
+
+  -- Query UsageToken contracts
+  usageTokens <- query @UsageToken alice
+  debug $ "🎟️ USAGE TOKEN CONTRACTS: " <> show (length usageTokens)
+  mapA_ (\(cid, contract) -> do
+    debug $ "  ✅ Contract ID: " <> show cid
+    debug $ "     Token ID: " <> contract.tokenId
+    debug $ "     Agent ID: " <> contract.agentId
+    debug $ "     Owner: " <> show contract.tokenOwner
+    debug $ "     Holder: " <> show contract.tokenHolder
+    debug $ "     Valid: " <> show contract.isValid
+    debug ""
+  ) usageTokens
+
+  -- Query SystemOrchestrator contracts
+  orchestrators <- query @SystemOrchestrator orchestrator
+  debug $ "🏛️ SYSTEM ORCHESTRATOR CONTRACTS: " <> show (length orchestrators)
+  mapA_ (\(cid, contract) -> do
+    debug $ "  ✅ Contract ID: " <> show cid
+    debug $ "     Total Registrations: " <> show contract.totalRegistrations
+    debug $ "     System Version: " <> contract.systemVersion
+    debug ""
+  ) orchestrators
+
+  -- Query UsageEvent contracts
+  events <- query @UsageEvent alice
+  debug $ "📊 USAGE EVENT CONTRACTS: " <> show (length events)
+  mapA_ (\(cid, contract) -> do
+    debug $ "  ✅ Event ID: " <> contract.eventId
+    debug $ "     Token ID: " <> contract.tokenId
+    debug $ "     Actor: " <> show contract.actor
+    debug $ "     Successful: " <> show contract.successful
+    debug ""
+  ) events
+
+  debug "==============================================="
+  debug "✅ BLOCKCHAIN QUERY COMPLETE"
+
+  return ()
