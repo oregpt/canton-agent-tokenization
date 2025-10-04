@@ -12,8 +12,11 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Install DAML SDK using the installer script
-RUN curl -sSL https://get.daml.com/ | sh -s 2.8.0
+# Install DAML SDK with retry logic for stability
+RUN for i in 1 2 3; do \
+    curl -sSL https://get.daml.com/ | sh -s 2.8.0 && break || \
+    (echo "DAML install attempt $i failed, retrying..." && sleep 10); \
+    done
 
 # Add DAML to PATH
 ENV PATH="/root/.daml/bin:${PATH}"
