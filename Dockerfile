@@ -39,7 +39,7 @@ RUN daml build
 # Expose ports
 EXPOSE 5011 5012 5018 5019 6865 7575
 
-# Environment variables
+# Environment variables (DATABASE_URL will be provided by Railway)
 ENV SUPABASE_DB_PASSWORD=""
 
 # Health check
