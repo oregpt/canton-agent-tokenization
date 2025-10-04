@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     unzip \
+    gettext-base \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -49,10 +50,9 @@ ENV JAVA_OPTS="-Xmx1024m -Xms256m -XX:MaxMetaspaceSize=256m -XX:+UseG1GC -XX:+Us
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:${PORT:-7575}/readyz || exit 1
 
-# Create optimized startup script with memory limits and DB URL resolution
+# Create startup script that resolves DATABASE_URL before starting Canton
 RUN echo '#!/bin/bash' > start.sh && \
-    echo 'echo "=== Memory & Environment Debug ==="' >> start.sh && \
-    echo 'echo "Available Memory: $(free -h)"' >> start.sh && \
+    echo 'echo "=== Environment Setup ==="' >> start.sh && \
     echo 'echo "DATABASE_URL: $DATABASE_URL"' >> start.sh && \
     echo 'echo "PORT: $PORT"' >> start.sh && \
     echo 'echo "JAVA_OPTS: $JAVA_OPTS"' >> start.sh && \
@@ -66,9 +66,12 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'mkdir -p "$CANTON_JAR_PATH"' >> start.sh && \
     echo 'cp /app/lib/postgresql-42.6.0.jar "$CANTON_JAR_PATH/"' >> start.sh && \
     echo 'echo "JDBC driver ready: $(ls -la $CANTON_JAR_PATH/postgresql*.jar)"' >> start.sh && \
-    echo 'echo "=== Starting Canton with Memory Optimization ==="' >> start.sh && \
-    echo '# Apply memory settings and start DAML' >> start.sh && \
-    echo 'exec daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --sandbox-port=6865' >> start.sh && \
+    echo 'echo "=== Creating Runtime Canton Config ==="' >> start.sh && \
+    echo '# Substitute DATABASE_URL in config file' >> start.sh && \
+    echo 'envsubst < canton-railway.conf > canton-runtime.conf' >> start.sh && \
+    echo 'echo "Config created with DATABASE_URL resolved"' >> start.sh && \
+    echo 'echo "=== Starting Canton ==="' >> start.sh && \
+    echo 'exec daml start --sandbox-option --config=canton-runtime.conf --json-api-option --allow-insecure-tokens --start-navigator=no --sandbox-port=6865' >> start.sh && \
     chmod +x start.sh
 
 # Start with optimized script
