@@ -44,9 +44,10 @@ EXPOSE 5011 5012 5018 5019 6865 7575
 # Environment variables (DATABASE_URL will be provided by Railway)
 ENV SUPABASE_DB_PASSWORD=""
 
-# JVM Memory optimization for Railway deployment - Minimal settings with all monitoring disabled
+# JVM Memory optimization for Railway deployment - Minimal settings with management agent disabled
 ENV JAVA_OPTS="-Xmx384m -Xms96m -XX:MaxMetaspaceSize=96m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-ENV JAVA_TOOL_OPTIONS="-Dcom.sun.management.jmxremote=false -Djava.rmi.server.hostname=127.0.0.1 -Dcom.sun.management.jmxremote.port=0 -Dcom.sun.management.jmxremote.rmi.port=0 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -XX:-UsePerfData -Djdk.attach.allowAttachSelf=false"
+ENV JAVA_TOOL_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions -XX:-UsePerfData -Djdk.attach.allowAttachSelf=false -Dcom.sun.management.jmxremote=false"
+ENV _JAVA_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 
 # Health check for DAML JSON API
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
@@ -86,6 +87,8 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'DATABASE_URL="$JDBC_DATABASE_URL" envsubst < canton-railway.conf > canton-runtime.conf' >> start.sh && \
     echo 'echo "Config created with DATABASE_URL resolved"' >> start.sh && \
     echo 'echo "=== Starting Canton ==="' >> start.sh && \
+    echo '# Completely disable JVM management agent startup' >> start.sh && \
+    echo 'export JAVA_TOOL_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions -Dcom.sun.management.jmxremote=false -Djdk.management.agent.disable=true"' >> start.sh && \
     echo 'exec daml start --sandbox-option --config=canton-runtime.conf --json-api-port=${PORT} --start-navigator=no --sandbox-port=6865' >> start.sh && \
     chmod +x start.sh
 
