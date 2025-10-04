@@ -46,6 +46,7 @@ ENV SUPABASE_DB_PASSWORD=""
 
 # JVM Memory optimization for Railway deployment - Minimal settings with JMX disabled
 ENV JAVA_OPTS="-Xmx384m -Xms96m -XX:MaxMetaspaceSize=96m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Dcom.sun.management.jmxremote=false"
+ENV JAVA_TOOL_OPTIONS="-Dcom.sun.management.jmxremote=false -Dcom.codahale.metrics.jmx.JmxReporter.enabled=false"
 
 # Health check for DAML JSON API
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
