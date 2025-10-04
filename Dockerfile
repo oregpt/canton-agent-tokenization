@@ -44,17 +44,18 @@ ENV SUPABASE_DB_PASSWORD=""
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:7575/readyz || exit 1
+  CMD curl -f http://localhost:${PORT:-7575}/readyz || exit 1
 
 # Debug network connectivity before starting Canton
 RUN echo '#!/bin/bash' > debug-start.sh && \
     echo 'echo "=== Environment Debug Info ==="' >> debug-start.sh && \
     echo 'echo "DATABASE_URL: $DATABASE_URL"' >> debug-start.sh && \
+    echo 'echo "PORT: $PORT"' >> debug-start.sh && \
     echo 'echo "CLASSPATH: $CLASSPATH"' >> debug-start.sh && \
     echo 'echo "JDBC Driver exists: $(ls -la /app/lib/postgresql-42.6.0.jar)"' >> debug-start.sh && \
     echo 'echo "=== Starting Canton ==="' >> debug-start.sh && \
     echo 'export JAVA_OPTS="-cp /app/lib/postgresql-42.6.0.jar:$CLASSPATH"' >> debug-start.sh && \
-    echo 'daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --json-api-port=7575 --sandbox-port=6865' >> debug-start.sh && \
+    echo 'daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --sandbox-port=6865' >> debug-start.sh && \
     chmod +x debug-start.sh
 
 # Start with debug script
