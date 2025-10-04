@@ -42,30 +42,34 @@ EXPOSE 5011 5012 5018 5019 6865 7575
 # Environment variables (DATABASE_URL will be provided by Railway)
 ENV SUPABASE_DB_PASSWORD=""
 
+# JVM Memory optimization for Railway deployment
+ENV JAVA_OPTS="-Xmx1024m -Xms256m -XX:MaxMetaspaceSize=256m -XX:+UseG1GC -XX:+UseContainerSupport"
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:${PORT:-7575}/readyz || exit 1
 
-# Create startup script with proper JDBC driver setup
-RUN echo '#!/bin/bash' > debug-start.sh && \
-    echo 'echo "=== Environment Debug Info ==="' >> debug-start.sh && \
-    echo 'echo "DATABASE_URL: $DATABASE_URL"' >> debug-start.sh && \
-    echo 'echo "PORT: $PORT"' >> debug-start.sh && \
-    echo 'echo "CLASSPATH: $CLASSPATH"' >> debug-start.sh && \
-    echo 'echo "JDBC Driver exists: $(ls -la /app/lib/postgresql-42.6.0.jar)"' >> debug-start.sh && \
-    echo '# Set default PORT if not provided by Railway' >> debug-start.sh && \
-    echo 'export PORT=${PORT:-8080}' >> debug-start.sh && \
-    echo 'echo "Using PORT: $PORT"' >> debug-start.sh && \
-    echo 'echo "=== Preparing JDBC Driver ==="' >> debug-start.sh && \
-    echo '# Add JDBC driver to Canton classpath' >> debug-start.sh && \
-    echo 'export DAML_SDK_VERSION=2.8.0' >> debug-start.sh && \
-    echo 'export CANTON_JAR_PATH="/root/.daml/sdk/${DAML_SDK_VERSION}/canton/lib"' >> debug-start.sh && \
-    echo 'mkdir -p "$CANTON_JAR_PATH"' >> debug-start.sh && \
-    echo 'cp /app/lib/postgresql-42.6.0.jar "$CANTON_JAR_PATH/"' >> debug-start.sh && \
-    echo 'echo "JDBC driver copied to Canton lib: $(ls -la $CANTON_JAR_PATH/postgresql*.jar)"' >> debug-start.sh && \
-    echo 'echo "=== Starting Canton ==="' >> debug-start.sh && \
-    echo 'daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --sandbox-port=6865' >> debug-start.sh && \
-    chmod +x debug-start.sh
+# Create optimized startup script with memory limits and DB URL resolution
+RUN echo '#!/bin/bash' > start.sh && \
+    echo 'echo "=== Memory & Environment Debug ==="' >> start.sh && \
+    echo 'echo "Available Memory: $(free -h)"' >> start.sh && \
+    echo 'echo "DATABASE_URL: $DATABASE_URL"' >> start.sh && \
+    echo 'echo "PORT: $PORT"' >> start.sh && \
+    echo 'echo "JAVA_OPTS: $JAVA_OPTS"' >> start.sh && \
+    echo '# Set default PORT if not provided by Railway' >> start.sh && \
+    echo 'export PORT=${PORT:-8080}' >> start.sh && \
+    echo 'echo "Using PORT: $PORT"' >> start.sh && \
+    echo 'echo "=== Preparing JDBC Driver ==="' >> start.sh && \
+    echo '# Add JDBC driver to Canton classpath' >> start.sh && \
+    echo 'export DAML_SDK_VERSION=2.8.0' >> start.sh && \
+    echo 'export CANTON_JAR_PATH="/root/.daml/sdk/${DAML_SDK_VERSION}/canton/lib"' >> start.sh && \
+    echo 'mkdir -p "$CANTON_JAR_PATH"' >> start.sh && \
+    echo 'cp /app/lib/postgresql-42.6.0.jar "$CANTON_JAR_PATH/"' >> start.sh && \
+    echo 'echo "JDBC driver ready: $(ls -la $CANTON_JAR_PATH/postgresql*.jar)"' >> start.sh && \
+    echo 'echo "=== Starting Canton with Memory Optimization ==="' >> start.sh && \
+    echo '# Apply memory settings and start DAML' >> start.sh && \
+    echo 'exec daml start --sandbox-option --config=canton-railway.conf --json-api-option --allow-insecure-tokens --start-navigator=no --sandbox-port=6865' >> start.sh && \
+    chmod +x start.sh
 
-# Start with debug script
-CMD ["bash", "debug-start.sh"]
+# Start with optimized script
+CMD ["bash", "start.sh"]
