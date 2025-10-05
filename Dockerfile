@@ -49,9 +49,9 @@ ENV JAVA_OPTS="-Xmx4g -Xms1g -XX:MaxMetaspaceSize=512m -XX:+UseG1GC -XX:MaxGCPau
 ENV JAVA_TOOL_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 ENV _JAVA_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 
-# Health check for DAML JSON API
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-7575}/v1/packages || exit 1
+# Health check for DAML JSON API - Railway compatible
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=10 \
+  CMD curl -f http://0.0.0.0:${PORT:-8080}/readyz || exit 1
 
 # Create startup script that resolves DATABASE_URL before starting Canton
 RUN echo '#!/bin/bash' > start.sh && \
