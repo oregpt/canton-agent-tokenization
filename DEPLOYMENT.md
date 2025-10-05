@@ -1,123 +1,260 @@
-# 🚀 DAML Agent Tokenization V2 - Deployment Guide
+# 🚀 Canton Agent Tokenization - Railway Production Deployment
 
-## 📦 **Built & Ready for Deployment**
+## 📡 **Live Deployment**
 
-Your Agent Tokenization V2 system is now **production-ready** with a built DAR file:
+Your Canton Agent Tokenization platform is **deployed and running 24/7** on Railway!
+
+**Public Endpoint:** `https://canton-agent-tokenization-production.up.railway.app`
+
+## ✅ **Deployment Status**
+- ✅ Railway hosting with 8GB RAM, 8 vCPU
+- ✅ PostgreSQL database with automatic backups
+- ✅ Health checks passing
+- ✅ DAML JSON API accessible externally
+- ✅ Auto-deployment from GitHub main branch
+
+---
+
+## 🌐 **API Access**
+
+### Base URL
 ```
-.daml/dist/agent-tokenization-v2-2.0.0.dar
+https://canton-agent-tokenization-production.up.railway.app
 ```
 
-## ✅ **Test Results**
-- ✅ 5 active contracts created
-- ✅ 8 transactions executed  
-- ✅ All V2 architectural improvements validated
-- ✅ 100% template coverage in tests
+### Health Check
+```bash
+curl https://canton-agent-tokenization-production.up.railway.app/
+# Returns: OK
+```
 
-## 🎯 **Deployment Options**
+### DAML JSON API Endpoints
 
-### **Option 1: Canton Network (Production)**
+All standard DAML JSON API endpoints are available:
 
-**Best for**: Production deployments, enterprise use
+- `POST /v1/query` - Query contracts
+- `POST /v1/create` - Create contracts
+- `POST /v1/exercise` - Exercise contract choices
+- `GET /v1/parties` - List parties
+- `GET /v1/packages` - List packages
+
+### Example API Call
 
 ```bash
-# 1. Sign up at canton.network
-# 2. Install Canton CLI
-daml install canton
-
-# 3. Configure connection
-# Create canton-config.conf with your network details
-
-# 4. Deploy
-canton -c canton-config.conf
-# In Canton console:
-participant1.dars.upload("agent-tokenization-v2-2.0.0.dar")
+curl -X POST https://canton-agent-tokenization-production.up.railway.app/v1/query \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "templateIds": ["AgentTokenizationV2:AgentToken"]
+  }'
 ```
 
-### **Option 2: DAML Hub (Hosted Testing)**
+---
 
-**Best for**: Quick demos, testing, prototyping
+## 🔧 **Architecture**
 
-1. Go to [hub.daml.com](https://hub.daml.com)
-2. Create account (free tier available)
-3. Upload `agent-tokenization-v2-2.0.0.dar`
-4. Deploy to hosted ledger
+### Port Configuration
+- **Port 8080** (Public): Reverse proxy + health checks
+- **Port 7575** (Internal): DAML JSON API
+- **Port 6865** (Internal): Canton Ledger API
 
-### **Option 3: Local Canton Development**
+### Components Running 24/7
 
-**Best for**: Development, testing, demos
+1. **Health Server** (`healthcheck.py`): Python reverse proxy on port 8080
+   - Handles Railway health checks (`/` and `/health` → 200 OK)
+   - Forwards all other requests to DAML JSON API on port 7575
 
+2. **Canton Sandbox**: DAML ledger with PostgreSQL persistence
+   - Auto-initialized on startup with DAR file
+   - Connected to Railway PostgreSQL database
+
+3. **DAML JSON API**: REST API for ledger access
+   - Bound to `0.0.0.0:7575` internally
+   - Accessible externally via reverse proxy
+
+---
+
+## 📦 **Database**
+
+**Provider:** Railway PostgreSQL
+**Connection:** Automatic via `$DATABASE_URL` environment variable
+
+The database persists:
+- Contract state
+- Transaction history
+- Party information
+- Package definitions (DAR files)
+
+---
+
+## 🔄 **Deployment Process**
+
+### Automatic Deployment (Current Setup)
+Every push to `main` branch triggers:
+
+1. Railway detects GitHub push
+2. Docker image builds from `Dockerfile`
+3. Container deploys with health checks
+4. Canton initializes and connects to PostgreSQL
+5. DAML JSON API starts on port 7575
+6. Reverse proxy routes external traffic
+
+**Build Time:** ~20 seconds
+**Startup Time:** ~3-5 minutes (Canton initialization)
+
+### Manual Deployment
+In Railway dashboard:
+1. Go to your service
+2. Click "Deployments"
+3. Click "Redeploy" on latest commit
+
+---
+
+## 🛠️ **Troubleshooting**
+
+### Check Deployment Logs
+Railway Dashboard → Your Service → Deployments → View Logs
+
+Key startup messages to look for:
+```
+Health check server listening on 0.0.0.0:8080
+Started server: (ServerBinding(/[0:0:0:0:0:0:0:0]:7575),None)
+DAR upload succeeded.
+```
+
+### Common Issues
+
+**503 Service Unavailable on `/v1/*` endpoints**
+- Canton is still initializing (takes 3-5 minutes after deployment)
+- Check logs for "Started server" message
+- Wait a few minutes and retry
+
+**502 Bad Gateway**
+- Railway port configuration issue
+- Verify port is set to `8080` in Railway networking settings
+- Check if service is running in Railway dashboard
+
+**401 Unauthorized**
+- ✅ This is normal! Just means you need authentication headers
+- Add `Authorization: Bearer YOUR_TOKEN` header to requests
+- DAML JSON API requires OAuth 2.0 Bearer tokens
+
+---
+
+## 📝 **Configuration Files**
+
+### Key Files
+- `Dockerfile` - Container build configuration
+- `railway.toml` - Railway deployment settings
+- `healthcheck.py` - Reverse proxy server
+- `canton-railway.conf` - Canton configuration template
+- `daml.yaml` - DAML project configuration
+
+### Environment Variables (Auto-configured by Railway)
+- `DATABASE_URL` - PostgreSQL connection string
+- `PORT` - Set to `8080` by Railway
+
+---
+
+## 🔐 **Security**
+
+- ✅ **HTTPS**: All traffic encrypted via Railway's edge proxy
+- ✅ **Authentication**: DAML JSON API requires OAuth 2.0 Bearer tokens
+- ✅ **Database**: PostgreSQL credentials managed by Railway
+- ✅ **Secrets**: No sensitive data in code/repository
+
+---
+
+## 📊 **Monitoring**
+
+### Health Checks
+Railway continuously monitors: `GET /`
+- **Success:** Returns `200 OK` with body `OK`
+- **Frequency:** Every 30 seconds
+
+### Application Logs
+View real-time logs in Railway dashboard:
+- API request/response logs
+- Canton consensus events
+- Database connection status
+- Error traces
+
+---
+
+## 🚨 **Updating the Application**
+
+### Standard Update Process
+
+1. Make changes to your code locally
+2. Commit and push to GitHub:
+   ```bash
+   git add .
+   git commit -m "Description of changes"
+   git push
+   ```
+3. Railway automatically detects push and redeploys
+4. Monitor Railway logs for successful startup
+5. Verify deployment with health check
+
+### Database Schema Changes
+Canton handles schema migrations automatically via Flyway. No manual intervention needed.
+
+---
+
+## 💰 **Cost Breakdown**
+
+**Current Plan:** Railway Hobby ($5/month)
+- 8GB RAM
+- 8 vCPU
+- PostgreSQL database included
+- 100GB outbound bandwidth
+- 24/7 uptime
+
+---
+
+## ✅ **Quick Reference**
+
+### Replace ngrok with Railway in Your Code
+
+**Before (ngrok):**
+```javascript
+const API_URL = "https://abc123.ngrok.io";
+```
+
+**After (Railway):**
+```javascript
+const API_URL = "https://canton-agent-tokenization-production.up.railway.app";
+```
+
+### Test Connection
 ```bash
-# Start local Canton sandbox
-daml start
+# Health check
+curl https://canton-agent-tokenization-production.up.railway.app/
 
-# In another terminal, run demo
-daml script \
-  --dar agent-tokenization-v2-2.0.0.dar \
-  --script-name AgentTokenizationV2:demoV2System \
-  --ledger-host localhost --ledger-port 6865
+# List packages (requires auth token)
+curl https://canton-agent-tokenization-production.up.railway.app/v1/packages \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
-## 🏗️ **V2 Architecture Deployed**
+---
 
-Your system now includes:
+## 📞 **Support Resources**
 
-### **🚀 Scalability Improvements**
-- ✅ Individual `AgentRegistration` contracts (scales to millions)
-- ✅ Normalized `AttributeDefinition` storage (efficient queries)  
-- ✅ Event-sourced usage tracking (immutable design)
+- **Railway Docs:** https://docs.railway.app
+- **DAML Docs:** https://docs.daml.com
+- **Canton Docs:** https://docs.daml.com/canton/
+- **GitHub Repository:** https://github.com/oregpt/canton-agent-tokenization
 
-### **🏢 Enterprise Features**
-- ✅ Multi-party validation workflows
-- ✅ Hierarchical organizational structures
-- ✅ Strong typing system (60+ attribute types)
-- ✅ Comprehensive audit trails
+---
 
-### **⚡ Performance Benefits**
-- ✅ No single-contract bottlenecks
-- ✅ O(1) registration vs O(n) registry updates
-- ✅ Immutable tokens eliminate expensive state mutations
-- ✅ Purpose-built indexes for fast searches
+## 🎉 **Success!**
 
-## 🎮 **Try the Live Demo**
+Your Canton Agent Tokenization platform is now:
+- ✅ Running 24/7 on Railway
+- ✅ No more ngrok tunnels needed
+- ✅ Persistent PostgreSQL storage
+- ✅ Auto-deploying from GitHub
+- ✅ Externally accessible via HTTPS
 
-The deployed system includes a live demo that creates:
-
-1. **GPT-4 Finance Assistant Agent**
-   - Individual registration contract
-   - Normalized attribute storage
-   
-2. **Usage Token with Event Sourcing**
-   - Immutable token design
-   - Separate event log for audit trail
-   
-3. **System Statistics**
-   - Real-time metrics
-   - Version tracking
-
-## 🌐 **Production Readiness Checklist**
-
-- ✅ Built and tested DAR file
-- ✅ Scalable architecture (millions of agents)
-- ✅ Enterprise security model
-- ✅ Comprehensive error handling
-- ✅ Multi-party validation workflows
-- ✅ Event sourcing for audit compliance
-- ✅ Strong typing eliminates configuration errors
-
-## 📈 **Next Steps**
-
-1. **Choose deployment target** (Canton Network, DAML Hub, or local)
-2. **Upload the DAR file**: `agent-tokenization-v2-2.0.0.dar`
-3. **Run the initialization script**: `AgentTokenizationV2:initializeV2System`
-4. **Execute the demo**: `AgentTokenizationV2:demoV2System`
-
-## 🎉 **You're Ready to Go!**
-
-Your DAML Agent Tokenization V2 system is now production-ready and can handle:
-- Enterprise-scale deployments (millions of agents)
-- High-frequency usage scenarios (thousands TPS)
-- Complex organizational hierarchies
-- Regulatory compliance requirements
-- Multi-party governance workflows
-
-**The future of AI agent tokenization is here! 🚀**
+**Deployment Status:** 🟢 Live
+**Last Updated:** October 5, 2025
