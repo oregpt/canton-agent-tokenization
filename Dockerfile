@@ -1,6 +1,6 @@
 # Dockerfile for Railway deployment of Canton Agent Tokenization
 
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk-jammy
 
 # Install required packages
 RUN apt-get update && apt-get install -y \
@@ -46,7 +46,7 @@ ENV SUPABASE_DB_PASSWORD=""
 
 # JVM Memory optimization for Railway Hobby plan (8GB RAM available)
 ENV JAVA_OPTS="-Xmx4g -Xms1g -XX:MaxMetaspaceSize=512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
-ENV JAVA_TOOL_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions -Dcom.sun.management.jmxremote=false -Dcom.sun.management.agent.disable=true"
+ENV JAVA_TOOL_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 ENV _JAVA_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 
 # Health check for DAML JSON API
