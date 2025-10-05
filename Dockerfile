@@ -38,8 +38,8 @@ RUN daml build
 
 # No startup script needed - run directly
 
-# Expose ports
-EXPOSE 5011 5012 5018 5019 6865 7575
+# Expose ports (Railway will inject $PORT dynamically)
+EXPOSE 8080 5011 5012 5018 5019 6865 7575
 
 # Environment variables (DATABASE_URL will be provided by Railway)
 ENV SUPABASE_DB_PASSWORD=""
@@ -95,11 +95,16 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'DATABASE_URL="$JDBC_DATABASE_URL" envsubst < canton-railway.conf > canton-runtime.conf' >> start.sh && \
     echo 'echo "Config created with DATABASE_URL resolved"' >> start.sh && \
     echo 'echo "=== Starting Health Check Server ==="' >> start.sh && \
+    echo 'echo "Railway assigned PORT: $PORT"' >> start.sh && \
+    echo 'echo "Binding health server to 0.0.0.0:$PORT"' >> start.sh && \
     echo '# Start simple HTTP server for Railway health checks' >> start.sh && \
     echo 'python3 /app/healthcheck.py &' >> start.sh && \
     echo 'HEALTH_PID=$!' >> start.sh && \
-    echo 'echo "Health server started on PID $HEALTH_PID, port $PORT"' >> start.sh && \
-    echo 'sleep 2' >> start.sh && \
+    echo 'echo "Health server started on PID $HEALTH_PID"' >> start.sh && \
+    echo 'sleep 3' >> start.sh && \
+    echo 'echo "Testing health server locally..."' >> start.sh && \
+    echo 'curl -v http://localhost:$PORT/ || echo "WARNING: Health server not responding locally"' >> start.sh && \
+    echo 'echo "Health server test complete"' >> start.sh && \
     echo 'echo "=== Starting Canton ==="' >> start.sh && \
     echo '# Keep stdin open to prevent daml start from exiting' >> start.sh && \
     echo 'tail -f /dev/null | daml start --sandbox-option --config=canton-runtime.conf --json-api-port=7575 --json-api-option --address=0.0.0.0 --start-navigator=no --sandbox-port=6865' >> start.sh && \
