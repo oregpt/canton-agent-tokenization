@@ -49,11 +49,10 @@ ENV JAVA_OPTS="-Xmx4g -Xms1g -XX:MaxMetaspaceSize=512m -XX:+UseG1GC -XX:MaxGCPau
 ENV JAVA_TOOL_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 ENV _JAVA_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 
-# Health check for DAML JSON API - Railway compatible
-# Increased start-period to 300s (5 min) because Canton initialization is slow
-# Using /v1/query endpoint which DAML JSON API actually provides
-HEALTHCHECK --interval=30s --timeout=15s --start-period=300s --retries=20 \
-  CMD curl -f http://0.0.0.0:${PORT:-8080}/v1/query || exit 1
+# Health check for simple HTTP server - Railway compatible
+# The health server starts immediately, Canton initializes in background
+HEALTHCHECK --interval=30s --timeout=15s --start-period=10s --retries=20 \
+  CMD curl -f http://0.0.0.0:${PORT:-8080}/ || exit 1
 
 # Create startup script that resolves DATABASE_URL before starting Canton
 RUN echo '#!/bin/bash' > start.sh && \
@@ -95,9 +94,15 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo '# Substitute JDBC URL in config file' >> start.sh && \
     echo 'DATABASE_URL="$JDBC_DATABASE_URL" envsubst < canton-railway.conf > canton-runtime.conf' >> start.sh && \
     echo 'echo "Config created with DATABASE_URL resolved"' >> start.sh && \
+    echo 'echo "=== Starting Health Check Server ==="' >> start.sh && \
+    echo '# Start simple HTTP server for Railway health checks' >> start.sh && \
+    echo 'python3 /app/healthcheck.py &' >> start.sh && \
+    echo 'HEALTH_PID=$!' >> start.sh && \
+    echo 'echo "Health server started on PID $HEALTH_PID, port $PORT"' >> start.sh && \
+    echo 'sleep 2' >> start.sh && \
     echo 'echo "=== Starting Canton ==="' >> start.sh && \
     echo '# Keep stdin open to prevent daml start from exiting' >> start.sh && \
-    echo 'tail -f /dev/null | daml start --sandbox-option --config=canton-runtime.conf --json-api-port=${PORT} --json-api-option --address=0.0.0.0 --start-navigator=no --sandbox-port=6865' >> start.sh && \
+    echo 'tail -f /dev/null | daml start --sandbox-option --config=canton-runtime.conf --json-api-port=7575 --json-api-option --address=0.0.0.0 --start-navigator=no --sandbox-port=6865' >> start.sh && \
     chmod +x start.sh
 
 # Start with optimized script
