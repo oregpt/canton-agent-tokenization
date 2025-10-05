@@ -50,8 +50,10 @@ ENV JAVA_TOOL_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 ENV _JAVA_OPTIONS="-XX:+IgnoreUnrecognizedVMOptions"
 
 # Health check for DAML JSON API - Railway compatible
-HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=10 \
-  CMD curl -f http://0.0.0.0:${PORT:-8080}/readyz || exit 1
+# Increased start-period to 300s (5 min) because Canton initialization is slow
+# Using /v1/query endpoint which DAML JSON API actually provides
+HEALTHCHECK --interval=30s --timeout=15s --start-period=300s --retries=20 \
+  CMD curl -f http://0.0.0.0:${PORT:-8080}/v1/query || exit 1
 
 # Create startup script that resolves DATABASE_URL before starting Canton
 RUN echo '#!/bin/bash' > start.sh && \
