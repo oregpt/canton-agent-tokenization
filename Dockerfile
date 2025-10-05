@@ -107,7 +107,8 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'echo "Health server test complete"' >> start.sh && \
     echo 'echo "=== Starting Canton ==="' >> start.sh && \
     echo '# Keep stdin open to prevent daml start from exiting' >> start.sh && \
-    echo 'tail -f /dev/null | daml start --sandbox-option --config=canton-runtime.conf --json-api-port=7575 --json-api-option --address=0.0.0.0 --start-navigator=no --sandbox-port=6865' >> start.sh && \
+    echo '# Note: daml start will upload DAR and run initialization script automatically' >> start.sh && \
+    echo 'tail -f /dev/null | daml start --sandbox-option --config=canton-runtime.conf --json-api-port=7575 --json-api-option --address=0.0.0.0 --start-navigator=no --sandbox-port=6865 --script-name AgentTokenizationV2:demoV2System' >> start.sh && \
     chmod +x start.sh
 
 # Start with optimized script
