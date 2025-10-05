@@ -106,8 +106,16 @@ RUN echo '#!/bin/bash' > start.sh && \
     echo 'curl -v http://localhost:$PORT/ || echo "WARNING: Health server not responding locally"' >> start.sh && \
     echo 'echo "Health server test complete"' >> start.sh && \
     echo 'echo "=== Starting Canton ==="' >> start.sh && \
-    echo '# Keep stdin open to prevent daml start from exiting' >> start.sh && \
-    echo 'tail -f /dev/null | daml start --sandbox-option --config=canton-runtime.conf --json-api-port=7575 --json-api-option --address=0.0.0.0 --start-navigator=no --sandbox-port=6865' >> start.sh && \
+    echo '# Start Canton in background' >> start.sh && \
+    echo 'tail -f /dev/null | daml start --sandbox-option --config=canton-runtime.conf --json-api-port=7575 --json-api-option --address=0.0.0.0 --start-navigator=no --sandbox-port=6865 &' >> start.sh && \
+    echo 'CANTON_PID=$!' >> start.sh && \
+    echo 'echo "Canton started in background (PID $CANTON_PID)"' >> start.sh && \
+    echo 'echo "Waiting for Canton to be ready..."' >> start.sh && \
+    echo 'sleep 60' >> start.sh && \
+    echo 'echo "=== Running Demo Initialization ==="' >> start.sh && \
+    echo 'daml script --dar .daml/dist/agent-tokenization-v3-3.0.0.dar --script-name AgentTokenizationV2:demoV2System --ledger-host localhost --ledger-port 6865 || echo "Demo script failed (this is OK for fresh deployment)"' >> start.sh && \
+    echo 'echo "=== Railway Deployment Ready ==="' >> start.sh && \
+    echo 'wait $CANTON_PID' >> start.sh && \
     chmod +x start.sh
 
 # Start with optimized script
